@@ -247,7 +247,7 @@ fn test_missing_key_returns_none_for_get_persistent() {
     let client = StorageContractClient::new(&env, &contract_id);
 
     let missing = symbol_short!("nope");
-    // Should return None for missing key
+    // Should return None for missing key across all storage types
     assert_eq!(client.get_persistent(&missing), None);
     assert_eq!(client.get_temporary(&missing), None);
     assert_eq!(client.get_instance(&missing), None);

@@ -31,8 +31,28 @@ impl StorageContract {
     pub fn set_persistent(env: Env, key: Symbol, value: u64) {
         let storage_key = DataKey::Persistent(key.clone());
         env.storage().persistent().set(&storage_key, &value);
+<<<<<<< HEAD
         env.storage().persistent().extend_ttl(&storage_key, 100, 100);
         env.events().publish((symbol_short!("persist"), symbol_short!("set")), (key, value));
+=======
+
+<<<<<<< HEAD
+        // Extend TTL to keep data alive
+        // Parameters: (key, threshold_ledgers, extend_to_ledgers)
+        // This extends TTL to 100 ledgers when it falls below 100
+        env.storage().persistent().extend_ttl(&key, 100, 100);
+
+=======
+        // Temporarily disabled for debugging
+        // env.storage().persistent().extend_ttl(&storage_key, 1000, 10000);
+        
+>>>>>>> 0fee596 (new storage patterns)
+        // EVENT: Persistent storage updated
+        env.events().publish(
+            (symbol_short!("persist"), symbol_short!("set")),
+            (key, value),
+        );
+>>>>>>> 33a6543 (new storage patterns)
     }
 
     /// Retrieves a value from persistent storage.
@@ -59,6 +79,8 @@ impl StorageContract {
     /// Temporary data only exists for the current ledger - cheapest option.
     ///
     /// # Arguments
+            env.storage().persistent().extend_ttl(&storage_key, 100, 100);
+            env.events().publish((symbol_short!("persist"), symbol_short!("set")), (key, value));
     /// * `key` - The storage key
     /// * `value` - The value to store
     ///
@@ -79,6 +101,8 @@ impl StorageContract {
     /// Returns `Some(value)` if present, or `None`.
     pub fn get_temporary(env: Env, key: Symbol) -> Option<u64> {
         env.storage().temporary().get(&DataKey::Temporary(key))
+            env.storage().instance().extend_ttl(100, 100);
+            env.events().publish((symbol_short!("instance"), symbol_short!("set")), (key, value));
     }
 
     /// Checks if a key exists in temporary storage.
@@ -105,9 +129,15 @@ impl StorageContract {
     pub fn set_instance(env: Env, key: Symbol, value: u64) {
         env.storage().instance().set(&DataKey::Instance(key.clone()), &value);
 
+<<<<<<< HEAD
         // Extend instance storage TTL
         env.storage().instance().extend_ttl(100, 100);
 
+=======
+        // Temporarily disabled for debugging
+        // env.storage().instance().extend_ttl(1000, 10000);
+        
+>>>>>>> 0fee596 (new storage patterns)
         // EVENT: Instance storage updated
         env.events().publish(
             (symbol_short!("instance"), symbol_short!("set")),
