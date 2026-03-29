@@ -9,8 +9,17 @@
 
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Vec,
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, BytesN, Env, IntoVal, Vec,
 };
+
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum FactoryError {
+    AlreadyInitialized = 1,
+    NotInitialized = 2,
+    Unauthorized = 3,
+}
 
 // ---------------------------------------------------------------------------
 // Ajo Contract (The Template)
@@ -30,10 +39,10 @@ pub enum AjoDataKey {
 #[contractimpl]
 impl Ajo {
     /// Initialize a new Ajo instance.
-    pub fn initialize(env: Env, amount: i128, max_members: u32, creator: Address) {
+    pub fn initialize(env: Env, amount: i128, max_members: u32, creator: Address) -> Result<(), FactoryError> {
         // Prevent re-initialization
         if env.storage().instance().has(&AjoDataKey::Creator) {
-            panic!("Already initialized");
+            return Err(FactoryError::AlreadyInitialized);
         }
 
         env.storage().instance().set(&AjoDataKey::Amount, &amount);
@@ -41,6 +50,8 @@ impl Ajo {
             .instance()
             .set(&AjoDataKey::MaxMembers, &max_members);
         env.storage().instance().set(&AjoDataKey::Creator, &creator);
+        
+        Ok(())
     }
 
     pub fn get_creator(env: Env) -> Address {
@@ -75,9 +86,9 @@ pub enum FactoryDataKey {
 #[contractimpl]
 impl AjoFactory {
     /// Set the Wasm hash of the Ajo contract to be deployed.
-    pub fn initialize(env: Env, wasm_hash: BytesN<32>) {
+    pub fn initialize(env: Env, wasm_hash: BytesN<32>) -> Result<(), FactoryError> {
         if env.storage().instance().has(&FactoryDataKey::WasmHash) {
-            panic!("Factory already initialized");
+            return Err(FactoryError::AlreadyInitialized);
         }
         env.storage()
             .instance()
@@ -88,10 +99,12 @@ impl AjoFactory {
         env.storage()
             .instance()
             .set(&FactoryDataKey::DeployedAjos, &ajos);
+            
+        Ok(())
     }
 
     /// Create a new Ajo instance.
-    pub fn create_ajo(env: Env, amount: i128, max_members: u32, creator: Address) -> Address {
+    pub fn create_ajo(env: Env, amount: i128, max_members: u32, creator: Address) -> Result<Address, FactoryError> {
         creator.require_auth();
 
         // Get the Wasm hash
@@ -99,10 +112,9 @@ impl AjoFactory {
             .storage()
             .instance()
             .get(&FactoryDataKey::WasmHash)
-            .expect("Factory not initialized");
+            .ok_or(FactoryError::NotInitialized)?;
 
         // Generate a salt for unique deployment
-        // Using the current number of deployed Ajos as a salt component
         let mut ajos: Vec<Address> = env
             .storage()
             .instance()
@@ -119,7 +131,6 @@ impl AjoFactory {
             .deploy(wasm_hash);
 
         // Initialize the new Ajo instance
-        // We use the Ajo contract client to call its initialize method
         let ajo_client = AjoClient::new(&env, &deployed_address);
         ajo_client.initialize(&amount, &max_members, &creator);
 
@@ -135,7 +146,7 @@ impl AjoFactory {
             creator,
         );
 
-        deployed_address
+        Ok(deployed_address)
     }
 
     /// Get all deployed Ajos.

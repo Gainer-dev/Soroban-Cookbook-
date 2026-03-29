@@ -1,5 +1,5 @@
 use super::*;
-use soroban_sdk::{testutils::Address as _, Address, BytesN, Env};
+use soroban_sdk::{testutils::Address as _, Address, Env};
 
 #[test]
 fn test_ajo_factory_workflow() {
@@ -12,14 +12,14 @@ fn test_ajo_factory_workflow() {
     // 2. Initialize the Factory
     let factory_id = env.register_contract(None, AjoFactory);
     let factory_client = AjoFactoryClient::new(&env, &factory_id);
-    factory_client.initialize(&wasm_hash);
+    factory_client.initialize(&wasm_hash).unwrap();
 
     // 3. Create a new Ajo instance
     let creator = Address::generate(&env);
     let amount = 1000i128;
     let max_members = 10u32;
 
-    let ajo_address = factory_client.create_ajo(&amount, &max_members, &creator);
+    let ajo_address = factory_client.create_ajo(&amount, &max_members, &creator).unwrap();
 
     // 4. Verify the new Ajo instance
     let ajo_client = AjoClient::new(&env, &ajo_address);
@@ -33,7 +33,7 @@ fn test_ajo_factory_workflow() {
 
     // 6. Create another Ajo instance with the same creator (different salt)
     let amount2 = 2000i128;
-    let ajo_address2 = factory_client.create_ajo(&amount2, &max_members, &creator);
+    let ajo_address2 = factory_client.create_ajo(&amount2, &max_members, &creator).unwrap();
 
     assert_ne!(ajo_address, ajo_address2);
 
@@ -43,19 +43,18 @@ fn test_ajo_factory_workflow() {
 }
 
 #[test]
-#[should_panic(expected = "Factory already initialized")]
 fn test_factory_cannot_be_reinitialized() {
     let env = Env::default();
     let wasm_hash = env.deployer().upload_contract_wasm(Ajo::WASM);
     let factory_id = env.register_contract(None, AjoFactory);
     let factory_client = AjoFactoryClient::new(&env, &factory_id);
 
-    factory_client.initialize(&wasm_hash);
-    factory_client.initialize(&wasm_hash);
+    factory_client.initialize(&wasm_hash).unwrap();
+    let result = factory_client.try_initialize(&wasm_hash);
+    assert_eq!(result, Err(Ok(FactoryError::AlreadyInitialized)));
 }
 
 #[test]
-#[should_panic(expected = "Already initialized")]
 fn test_ajo_cannot_be_reinitialized() {
     let env = Env::default();
     env.mock_all_auths();
@@ -64,12 +63,13 @@ fn test_ajo_cannot_be_reinitialized() {
 
     let factory_id = env.register_contract(None, AjoFactory);
     let factory_client = AjoFactoryClient::new(&env, &factory_id);
-    factory_client.initialize(&wasm_hash);
+    factory_client.initialize(&wasm_hash).unwrap();
 
     let creator = Address::generate(&env);
-    let ajo_address = factory_client.create_ajo(&100, &10, &creator);
+    let ajo_address = factory_client.create_ajo(&100, &10, &creator).unwrap();
 
     let ajo_client = AjoClient::new(&env, &ajo_address);
-    // Attempting to call initialize again should panic
-    ajo_client.initialize(&100, &10, &creator);
+    // Attempting to call initialize again should return error
+    let result = ajo_client.try_initialize(&100, &10, &creator);
+    assert_eq!(result, Err(Ok(FactoryError::AlreadyInitialized)));
 }

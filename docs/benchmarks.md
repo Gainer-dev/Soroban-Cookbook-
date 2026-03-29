@@ -14,6 +14,8 @@ The following table compares the resource usage of common operations in our basi
 | `02-storage-patterns` | `set_temporary` | ~25,000 | ~1 KB | Temporary storage is best for short-lived data. |
 | `03-authentication` | `transfer()` | ~45,000 | ~2.5 KB | `require_auth()` and multiple storage ops add up. |
 | `05-error-handling` | `Result` return | ~12,000 | ~1.2 KB | Returning `Result` is cheaper than panicking. |
+| `ajo-factory` | `create_ajo()` | ~85,000 | ~4 KB | Dynamic deployment and initialization overhead. |
+| `multi-sig-patterns`| `execute()` | ~60,000 | ~3.5 KB | Threshold verification and multiple auth checks. |
 
 *Note: These values are estimates based on local test execution and may vary slightly depending on the Soroban SDK version and network configuration.*
 
