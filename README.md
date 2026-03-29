@@ -190,6 +190,7 @@ Reference docs in [docs/](./docs/):
 
 - [Best Practices](./docs/best-practices.md) — Security, storage, and code quality guidelines
 - [Style Guide](./docs/style-guide.md) — Naming, documentation, and testing standards
+- [Performance Benchmarks](./docs/benchmarks.md) — Resource usage comparison and optimization tips
 - [Quick Reference](./docs/quick-reference.md) — Cheat sheet for common patterns
 - [Glossary](./docs/glossary.md) — Key terms and concepts
 
