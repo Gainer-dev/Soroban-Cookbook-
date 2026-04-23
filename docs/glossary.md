@@ -51,6 +51,12 @@ A smart contract deployed on the Stellar network using Soroban. Contracts are wr
 
 A unique identifier for a deployed contract. Used to invoke contract functions and interact with the contract.
 
+### Contract Spec
+
+The generated interface description for a Soroban contract (functions, argument types, and return types), usually embedded in WASM and used by tooling for clients and docs.
+
+**Official docs:** [Contract Specs](https://developers.stellar.org/docs/tools/developer-tools/cli/smart-contracts)
+
 ### contractimpl
 
 Rust macro that marks an implementation block as containing contract functions that can be invoked externally.
@@ -252,6 +258,12 @@ The Rust library (crate) that provides types, macros, and utilities for writing 
 
 **Crate:** `soroban-sdk`
 
+### Simulation
+
+A preflight execution step that estimates resource usage, resolves the transaction footprint, and returns any required authorization payloads before submission.
+
+**Official docs:** [Simulate Transactions](https://developers.stellar.org/docs/tools/sdks/build-tx/transaction-simulation)
+
 ### Stellar
 
 The blockchain network that Soroban contracts run on. Known for fast, low-cost transactions and built-in asset support.
@@ -312,6 +324,12 @@ A Stellar concept where an account explicitly trusts and can hold a specific ass
 The number of ledgers that contract data will persist before expiring. Must be extended to keep data alive.
 
 **See also:** [Storage](#storage)
+
+### TTL Extension
+
+The process of extending a contract's code/data lifetime before expiration, typically by calling storage `extend_ttl` APIs or using CLI operations for contract entries.
+
+**Official docs:** [Storage and TTL](https://developers.stellar.org/docs/build/smart-contracts/storage/state-archival)
 
 ## U
 
