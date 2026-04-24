@@ -1,78 +1,99 @@
 # Instance Storage
 
-A focused demonstration of Soroban's instance storage — the middle tier between persistent and temporary storage.
+A focused deep dive into Soroban's instance storage tier — the contract-wide, shared-TTL storage layer.
 
-## 📖 What You'll Learn
+## Overview
 
-- When and why to use instance storage over persistent or temporary storage
-- How all instance keys share a single TTL (unlike persistent's per-key TTL)
-- Two real-world use cases: transaction counters and runtime configuration
-- How to extend instance TTL efficiently with a single call
+Instance storage is scoped to the deployed contract address. All keys share a single TTL, so one `extend_ttl` call refreshes the lifetime of every key at once. This makes it cheaper to manage than persistent storage for contract-wide data.
 
-## 🎯 Overview
+## When to Use Instance Storage
 
-Instance storage is scoped to the deployed contract address. All keys share one TTL, so a single `extend_ttl` call protects every key at once — making it cheaper to manage than persistent storage for contract-wide state.
+| Use instance storage when… | Avoid it when… |
+|---|---|
+| Data is contract-wide config shared by all callers | Data is per-user or per-entity (use persistent) |
+| You want simpler TTL management (one call covers all keys) | Data must survive a contract upgrade (use persistent) |
+| Data changes moderately often | Data is only needed for one invocation (use temporary) |
 
-| Property                  | Persistent     | Instance       | Temporary      |
-|---------------------------|----------------|----------------|----------------|
-| Survives contract upgrade | ✅ Yes         | ❌ No          | ❌ No          |
-| TTL management            | Per-key        | Per-instance   | Per-key        |
-| Relative cost             | Highest        | Medium         | Lowest         |
-| Best for                  | User balances  | Contract config| Short-lived    |
+**Typical use cases:** admin address, fee rates, protocol parameters, transaction counters, feature flags.
 
-## 🔑 Key Concepts
+## Storage Comparison
+
+| Property | Persistent | Instance | Temporary |
+|---|---|---|---|
+| Survives upgrade | ✅ Yes | ❌ No | ❌ No |
+| TTL management | Per-key | Per-instance | Per-key |
+| Relative cost | Highest | Medium | Lowest |
+| Best for | Balances, ownership | Config, counters | Flags, caches |
+
+## Key Concepts
 
 ### Shared TTL
 
+Unlike persistent storage where each key has its own TTL, all instance keys share one TTL. A single `extend_ttl` call covers everything:
+
 ```rust
-// One call refreshes ALL instance keys — no per-key bookkeeping needed
-env.storage().instance().extend_ttl(TTL_THRESHOLD, TTL_EXTEND_TO);
+// One call refreshes ALL instance keys — no per-key bookkeeping needed.
+env.storage().instance().extend_ttl(threshold, extend_to);
 ```
 
-Compare this to persistent storage, where you must call `extend_ttl` once per key.
-
-### Use Case 1 — Transaction Counter
+### Typed Key Enum
 
 ```rust
-pub fn increment_counter(env: Env) -> u64 {
-    let count: u64 = env.storage().instance()
-        .get(&InstanceKey::TxCounter)
-        .unwrap_or(0) + 1;
-    env.storage().instance().set(&InstanceKey::TxCounter, &count);
-    env.storage().instance().extend_ttl(TTL_THRESHOLD, TTL_EXTEND_TO);
-    count
+#[contracttype]
+#[derive(Clone)]
+pub enum InstanceKey {
+    TxCounter,
+    Config(Symbol),
 }
 ```
 
-### Use Case 2 — Runtime Configuration
+Using a typed enum prevents key collisions at compile time and keeps the key surface explicit.
+
+### CRUD Operations
 
 ```rust
-pub fn set_config(env: Env, key: Symbol, value: u64) {
-    env.storage().instance().set(&InstanceKey::Config(key), &value);
-    env.storage().instance().extend_ttl(TTL_THRESHOLD, TTL_EXTEND_TO);
-}
+// Write
+env.storage().instance().set(&InstanceKey::TxCounter, &count);
+env.storage().instance().extend_ttl(1_000, 10_000);
+
+// Read
+let count: u64 = env.storage().instance()
+    .get(&InstanceKey::TxCounter)
+    .unwrap_or(0);
+
+// Check existence
+let exists: bool = env.storage().instance().has(&InstanceKey::TxCounter);
+
+// Delete
+env.storage().instance().remove(&InstanceKey::TxCounter);
 ```
 
-## ✅ When to Use Instance Storage
+## Contract API
 
-**Use instance storage when:**
-- Data is contract-wide (not per-user)
-- Data does not need to survive a contract upgrade
-- You want simpler TTL management than persistent storage
+| Function | Description |
+|---|---|
+| `set_instance(key, value)` | Store a `u64` under a named config key |
+| `get_instance(key)` | Retrieve a `u64` by key, returns `None` if missing |
+| `increment_counter()` | Increment the transaction counter, returns new value |
+| `get_counter()` | Read the current transaction counter |
+| `set_config(key, value)` | Store a named runtime configuration value |
+| `get_config(key)` | Retrieve a named runtime configuration value |
+| `extend_ttl()` | Explicitly bump the instance TTL |
 
-**Don't use instance storage when:**
-- Data must survive `upgrade()` calls → use persistent
-- Data is only needed for one invocation → use temporary
-- Data is per-user (e.g. balances) → use persistent
-
-## 🚀 Running Tests
+## Build & Test
 
 ```bash
+# From this directory
+cargo test
+cargo build --target wasm32-unknown-unknown --release
+
+# From the repository root
 cargo test -p instance-storage
+cargo build -p instance-storage --target wasm32-unknown-unknown --release
 ```
 
-## 📚 Related Examples
+## Related Examples
 
-- [persistent-storage](../persistent-storage/) — Per-key TTL, user balances
-- [temporary_storage](../temporary_storage/) — Single-ledger caches
-- [02-storage-patterns](../02-storage-patterns/) — All three types compared
+- [02-storage-patterns](../02-storage-patterns/) — Compare all three storage types side-by-side
+- [persistent-storage](../persistent-storage/) — Per-key TTL for user-specific data
+- [temporary_storage](../temporary_storage/) — Ephemeral, single-ledger data
