@@ -17,6 +17,7 @@
 - [Examples](#examples)
 - [Guides](#guides)
 - [Documentation](#documentation)
+- [Web Application](#web-application)
 - [Contributing](#contributing)
 - [Additional Resources](#additional-resources)
 - [License](#license)
@@ -38,7 +39,7 @@ Every example in this cookbook:
 ```bash
 # Clone the repository
 git clone https://github.com/Soroban-Cookbook/Soroban-Cookbook-.git
-cd Soroban-Cookbook
+cd Soroban-Cookbook-
 
 # Run a basic example
 cd examples/basics/01-hello-world
@@ -80,8 +81,8 @@ stellar --version
 ### 4. Clone and verify
 
 ```bash
-git clone https://github.com/Soroban-Cookbook/Soroban-Cookbook.git
-cd Soroban-Cookbook
+git clone https://github.com/Soroban-Cookbook/Soroban-Cookbook-.git
+cd Soroban-Cookbook-
 cargo test --workspace
 ```
 
@@ -103,6 +104,8 @@ Soroban-Cookbook/
 │       ├── examples/       # Example write-ups
 │       └── docs/           # Reference documentation
 ├── docs/                   # Supplementary reference docs
+├── webapp/                 # Next.js web application for interactive examples
+├── scripts/                # Build and deployment scripts
 └── .github/                # CI/CD workflows and templates
 ```
 
@@ -177,6 +180,22 @@ Reference docs in [docs/](./docs/):
 - [Glossary](./docs/glossary.md) — Key terms and concepts
 
 The full documentation site is built with [mdBook](https://rust-lang.github.io/mdBook/) and deployed to GitHub Pages on every push to `main`.
+
+## Web Application
+
+An interactive web application built with Next.js to explore and run Soroban contract examples directly in your browser.
+
+- Located in [webapp/](./webapp/)
+- Built with Next.js, React, and TypeScript
+- Provides a playground for testing contracts
+
+To run the webapp locally:
+
+```bash
+cd webapp
+npm install
+npm run dev
+```
 
 ## Contributing
 
