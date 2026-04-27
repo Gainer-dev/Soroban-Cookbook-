@@ -29,7 +29,7 @@ The Soroban Cookbook is a community-driven developer resource for building smart
 
 ## Project Goals
 
-- Make Soroban contract development easier by providing concrete, real-world examples
+- Make Soroban contract development easier by providing concrete, real-world examples to the problems
 - Teach safe Soroban and Rust patterns through documentation and tests
 - Support beginners and advanced developers with clearly organized examples
 - Keep repository examples current with Stellar and Soroban tooling
