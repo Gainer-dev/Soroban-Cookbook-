@@ -18,7 +18,9 @@ edition = "2021"
 rust-version = "1.74"
 
 [workspace.dependencies]
-soroban-sdk = "21.7.0"
+soroban-sdk = "20.1.0"
+soroban-sdk-testutils = { version = "20.1.0" }
+soroban-env-host = "20.1.0"
 
 [profile.release]
 opt-level = "z"

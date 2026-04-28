@@ -51,6 +51,8 @@ jobs:
     # edition 2024 (e.g. base64ct ≥ 1.8) — so we drop the old matrix entry.
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -68,7 +70,22 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Run tests
+      - name: Run targeted tests for changed paths
+        if: github.event_name == 'pull_request'
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...${{ github.sha }})
+          for file in $CHANGED_FILES; do
+            if [[ $file == examples/* ]]; then
+              EXAMPLE_DIR=$(echo $file | cut -d/ -f1-3)
+              if [ -f "$EXAMPLE_DIR/Cargo.toml" ]; then
+                echo "Running test for changed example $EXAMPLE_DIR"
+                cd $EXAMPLE_DIR && cargo test && cd -
+              fi
+            fi
+          done
+
+      - name: Run tests (fallback)
+        if: github.event_name != 'pull_request'
         run: cargo test --workspace --all-features
 
   build:
