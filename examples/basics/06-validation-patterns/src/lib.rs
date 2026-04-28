@@ -160,8 +160,8 @@ impl ValidationContract {
     /// # Errors
     /// * `ValidationError::InvalidAddress` - If address is invalid
     pub fn validate_address(address: Address) -> Result<(), ValidationError> {
-        // Use shared validation function
-        validate_address(address)
+        // Use shared validation function (fully qualified to avoid recursive call)
+        soroban_validation::validate_address(address)
     }
 
     /// Example of array parameter validation

@@ -83,7 +83,11 @@ pub enum ValidationError {
 /// * `ValidationError::InvalidAmount` - If amount is negative or zero
 /// * `ValidationError::AmountTooSmall` - If amount is below minimum
 /// * `ValidationError::AmountTooLarge` - If amount exceeds maximum
-pub fn validate_amount(amount: i128, min_amount: i128, max_amount: i128) -> Result<(), ValidationError> {
+pub fn validate_amount(
+    amount: i128,
+    min_amount: i128,
+    max_amount: i128,
+) -> Result<(), ValidationError> {
     // Basic amount validation
     if amount <= 0 {
         return Err(ValidationError::InvalidAmount);
@@ -109,10 +113,15 @@ pub fn validate_amount(amount: i128, min_amount: i128, max_amount: i128) -> Resu
 /// * `max_length` - Maximum allowed length (inclusive)
 ///
 /// # Errors
-/// * `ValidationError::InvalidString` - If string contains invalid characters or is empty when min_length > 0
+/// * `ValidationError::InvalidString` - If string contains invalid characters or is empty
+///   when `min_length > 0`
 /// * `ValidationError::StringTooShort` - If string is too short
 /// * `ValidationError::StringTooLong` - If string is too long
-pub fn validate_string(text: String, min_length: u32, max_length: u32) -> Result<(), ValidationError> {
+pub fn validate_string(
+    text: String,
+    min_length: u32,
+    max_length: u32,
+) -> Result<(), ValidationError> {
     let length = text.len();
 
     // Length validation
@@ -160,7 +169,11 @@ pub fn validate_address(_address: Address) -> Result<(), ValidationError> {
 /// # Errors
 /// * `ValidationError::ArrayTooSmall` - If array is too small
 /// * `ValidationError::ArrayTooLarge` - If array is too large
-pub fn validate_array(array: Vec<i32>, min_size: u32, max_size: u32) -> Result<(), ValidationError> {
+pub fn validate_array(
+    array: Vec<i32>,
+    min_size: u32,
+    max_size: u32,
+) -> Result<(), ValidationError> {
     let size = array.len();
 
     if size < min_size {
@@ -219,12 +232,9 @@ pub fn validate_timestamp(
 ///
 /// # Errors
 /// * `ValidationError::ContractNotInitialized` - If the key doesn't exist
-pub fn require_initialized<K>(
-    env: &Env,
-    key: &K,
-) -> Result<(), ValidationError>
+pub fn require_initialized<K>(env: &Env, key: &K) -> Result<(), ValidationError>
 where
-    K: soroban_sdk::TryFromVal<Env, soroban_sdk::Val> + soroban_sdk::IntoVal<Env, soroban_sdk::Val>,
+    K: soroban_sdk::IntoVal<Env, soroban_sdk::Val>,
 {
     if !env.storage().instance().has(key) {
         return Err(ValidationError::ContractNotInitialized);

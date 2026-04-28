@@ -194,7 +194,7 @@ impl AuthContract {
             .ok_or(AuthError::NotAdmin)?;
 
         // Use shared validation pattern
-        if let Err(_) = require_admin(stored_admin, admin.clone()) {
+        if require_admin(stored_admin, admin.clone()).is_err() {
             return Err(AuthError::NotAdmin);
         }
 
@@ -225,7 +225,7 @@ impl AuthContract {
             .ok_or(AuthError::NotAdmin)?;
 
         // Use shared validation pattern
-        if let Err(_) = require_admin(stored_admin, admin.clone()) {
+        if require_admin(stored_admin, admin.clone()).is_err() {
             return Err(AuthError::NotAdmin);
         }
 
@@ -265,7 +265,7 @@ impl AuthContract {
             .unwrap_or(0);
 
         // Use shared validation pattern
-        if let Err(_) = require_sufficient_balance(from_balance, amount) {
+        if require_sufficient_balance(from_balance, amount).is_err() {
             return Err(AuthError::InsufficientBalance);
         }
 
