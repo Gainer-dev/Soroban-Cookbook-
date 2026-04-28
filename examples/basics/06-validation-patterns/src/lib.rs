@@ -90,7 +90,7 @@ impl ValidationContract {
     /// * `ValidationError::ContractNotInitialized` - If already initialized
     pub fn initialize(env: Env, owner: Address) -> Result<(), ValidationError> {
         // Parameter validation
-        Self::validate_address(owner.clone())?;
+        Self::validate_address(owner)?;
 
         // State validation
         if env.storage().instance().has(&DataKey::Owner) {
@@ -265,7 +265,7 @@ impl ValidationContract {
         let balance: i128 = env
             .storage()
             .persistent()
-            .get(&DataKey::Balance(address.clone()))
+            .get(&DataKey::Balance(address))
             .unwrap_or(0);
 
         // Use shared validation pattern
@@ -291,7 +291,7 @@ impl ValidationContract {
         let allowance: i128 = env
             .storage()
             .persistent()
-            .get(&DataKey::Allowance(owner.clone(), spender.clone()))
+            .get(&DataKey::Allowance(owner, spender))
             .unwrap_or(0);
 
         if allowance < required_amount {
@@ -318,7 +318,7 @@ impl ValidationContract {
         if let Some(last_action) = env
             .storage()
             .persistent()
-            .get::<DataKey, u64>(&DataKey::LastAction(address.clone()))
+            .get::<DataKey, u64>(&DataKey::LastAction(address))
         {
             // Use shared validation pattern
             require_cooldown_expired(env, last_action, cooldown_seconds)
@@ -365,11 +365,15 @@ impl ValidationContract {
 
         // Special checks for owner and admin
         match required_role {
-            UserRole::Owner if user_role != UserRole::Owner => {
-                return Err(ValidationError::NotOwner);
+            UserRole::Owner => {
+                if user_role != UserRole::Owner {
+                    return Err(ValidationError::NotOwner);
+                }
             }
-            UserRole::Admin if user_role != UserRole::Admin && user_role != UserRole::Owner => {
-                return Err(ValidationError::NotAdmin);
+            UserRole::Admin => {
+                if user_role != UserRole::Admin && user_role != UserRole::Owner {
+                    return Err(ValidationError::NotAdmin);
+                }
             }
             _ => {}
         }
@@ -436,41 +440,41 @@ impl ValidationContract {
         message: Option<String>,
     ) -> Result<(), ValidationError> {
         // 1. Parameter validation
-        Self::validate_address(from.clone())?;
-        Self::validate_address(to.clone())?;
+        Self::validate_address(from)?;
+        Self::validate_address(to)?;
         Self::validate_amount_parameters(amount, 1, 1000000)?;
 
-        if let Some(msg) = &message {
-            Self::validate_string_parameters(msg.clone(), 0, 100)?;
+        if let Some(msg) = message {
+            Self::validate_string_parameters(msg, 0, 100)?;
         }
 
         // 2. State validation
         Self::validate_contract_state(&env, ContractState::Active)?;
-        Self::validate_balance(&env, from.clone(), amount)?;
+        Self::validate_balance(&env, from, amount)?;
 
         // 3. Authorization validation
-        Self::validate_role(&env, from.clone(), UserRole::User)?;
+        Self::validate_role(&env, from, UserRole::User)?;
         from.require_auth();
 
         // 4. Business logic validation (cooldown, rate limiting, etc.)
-        Self::validate_cooldown(&env, from.clone(), 60)?; // 1 minute cooldown
+        Self::validate_cooldown(&env, from, 60)?; // 1 minute cooldown
 
         // Execute the transfer
         let from_balance: i128 = env
             .storage()
             .persistent()
-            .get(&DataKey::Balance(from.clone()))
+            .get(&DataKey::Balance(from))
             .unwrap_or(0);
 
         let to_balance: i128 = env
             .storage()
             .persistent()
-            .get(&DataKey::Balance(to.clone()))
+            .get(&DataKey::Balance(to))
             .unwrap_or(0);
 
         env.storage()
             .persistent()
-            .set(&DataKey::Balance(from.clone()), &(from_balance - amount));
+            .set(&DataKey::Balance(from), &(from_balance - amount));
         env.storage()
             .persistent()
             .set(&DataKey::Balance(to), &(to_balance + amount));
@@ -503,11 +507,11 @@ impl ValidationContract {
         role: UserRole,
     ) -> Result<(), ValidationError> {
         // Validate admin authorization
-        Self::validate_admin(&env, admin.clone())?;
+        Self::validate_admin(&env, admin)?;
         admin.require_auth();
 
         // Validate user address
-        Self::validate_address(user.clone())?;
+        Self::validate_address(user)?;
 
         // Set the role
         env.storage()
@@ -526,7 +530,7 @@ impl ValidationContract {
     /// # Errors
     /// * `ValidationError::NotAdmin` - If caller is not admin
     pub fn pause_contract(env: Env, admin: Address) -> Result<(), ValidationError> {
-        Self::validate_admin(&env, admin.clone())?;
+        Self::validate_admin(&env, admin)?;
         admin.require_auth();
 
         env.storage()
@@ -545,7 +549,7 @@ impl ValidationContract {
     /// # Errors
     /// * `ValidationError::NotAdmin` - If caller is not admin
     pub fn resume_contract(env: Env, admin: Address) -> Result<(), ValidationError> {
-        Self::validate_admin(&env, admin.clone())?;
+        Self::validate_admin(&env, admin)?;
         admin.require_auth();
 
         env.storage()

@@ -399,7 +399,7 @@ impl CustomStructsContract {
         email: Option<String>,
     ) -> Result<UserProfile, ContractError> {
         let profile = UserProfile {
-            address: address.clone(),
+            address,
             name,
             email,
             avatar_hash: None,
@@ -437,7 +437,7 @@ impl CustomStructsContract {
         let mut profile: UserProfile = env
             .storage()
             .instance()
-            .get(&(symbol_short!("profile"), address.clone()))
+            .get(&(symbol_short!("profile"), address))
             .ok_or(ContractError::UserNotFound)?;
 
         // Update fields if provided
@@ -468,8 +468,8 @@ impl CustomStructsContract {
         portfolio_type: PortfolioType,
     ) -> Result<Portfolio, ContractError> {
         let portfolio = Portfolio {
-            owner: owner.clone(),
-            name: name.clone(),
+            owner,
+            name: name,
             description,
             holdings: Vec::new(&env),
             metadata: PortfolioMetadata {
@@ -524,8 +524,8 @@ impl CustomStructsContract {
             .instance()
             .get(&(
                 symbol_short!("portfolio"),
-                owner.clone(),
-                portfolio_name.clone(),
+                owner,
+                &portfolio_name,
             ))
             .ok_or(ContractError::PortfolioNotFound)?;
 
@@ -567,7 +567,7 @@ impl CustomStructsContract {
         language: String,
     ) -> Result<ExtendedUserProfile, ContractError> {
         // First create basic profile
-        let basic_profile = Self::create_user_profile(env.clone(), address.clone(), name, None)?;
+        let basic_profile = Self::create_user_profile(env, address, name, None)?;
 
         // Create extended profile
         let extended_profile = ExtendedUserProfile {
@@ -675,8 +675,7 @@ impl CustomStructsContract {
     pub fn get_user_portfolios(env: Env, _owner: Address) -> Result<Vec<String>, ContractError> {
         // This is a simplified implementation
         // In a real contract, you'd maintain an index of user portfolios
-        let portfolios = Vec::new(&env);
-        Ok(portfolios)
+        Ok(Vec::new(&env))
     }
 
     /// Calculate portfolio value
