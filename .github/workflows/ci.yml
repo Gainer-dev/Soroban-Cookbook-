@@ -273,10 +273,15 @@ jobs:
           key: ${{ runner.os }}-cargo-wasm-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-wasm-
 
-      - name: Install stellar-cli
+      - name: Install Soroban CLI (stellar-cli)
         # soroban-cli was renamed to stellar-cli at v22. Use the latest
         # release that is compatible with soroban-sdk 21.x (protocol 21).
         run: cargo install --locked stellar-cli --version 22.1.0
+
+      - name: Verify Soroban CLI is available
+        run: |
+          stellar --version
+          stellar soroban --help > /dev/null
 
       - name: Build all workspace contracts as Wasm
         run: |
