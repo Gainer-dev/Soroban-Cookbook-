@@ -273,21 +273,24 @@ fn test_ajo_factory_lifecycle_integration() {
         &factory_id,
         &Symbol::new(&env, "initialize"),
         Vec::from_array(&env, [wasm_hash.into_val(&env)]),
-    ).unwrap();
+    )
+    .unwrap();
 
     // Step 3: Create Ajo via factory
-    let ajo_address: Address = env.invoke_contract::<Result<Address, ajo_factory::FactoryError>>(
-        &factory_id,
-        &Symbol::new(&env, "create_ajo"),
-        Vec::from_array(
-            &env,
-            [
-                1000i128.into_val(&env),
-                10u32.into_val(&env),
-                creator.clone().into_val(&env),
-            ],
-        ),
-    ).unwrap();
+    let ajo_address: Address = env
+        .invoke_contract::<Result<Address, ajo_factory::FactoryError>>(
+            &factory_id,
+            &Symbol::new(&env, "create_ajo"),
+            Vec::from_array(
+                &env,
+                [
+                    1000i128.into_val(&env),
+                    10u32.into_val(&env),
+                    creator.clone().into_val(&env),
+                ],
+            ),
+        )
+        .unwrap();
 
     // Step 4: Verify Ajo was created and tracked
     let deployed_ajos: Vec<Address> = env.invoke_contract(
@@ -324,11 +327,13 @@ fn test_multi_sig_governance_integration() {
     .unwrap();
 
     // Step 2: Create a proposal
-    let proposal_id: u32 = env.invoke_contract::<Result<u32, multi_sig_patterns::AuthError>>(
-        &multisig_id,
-        &Symbol::new(&env, "create_proposal"),
-        Vec::from_array(&env, [signer1.clone().into_val(&env)]),
-    ).unwrap();
+    let proposal_id: u32 = env
+        .invoke_contract::<Result<u32, multi_sig_patterns::AuthError>>(
+            &multisig_id,
+            &Symbol::new(&env, "create_proposal"),
+            Vec::from_array(&env, [signer1.clone().into_val(&env)]),
+        )
+        .unwrap();
 
     // Step 3: Track governance action via events counter
     env.invoke_contract::<()>(&events_id, &symbol_short!("increment"), Vec::new(&env));
@@ -354,11 +359,13 @@ fn test_multi_sig_governance_integration() {
     .unwrap();
 
     // Step 5: Execute
-    let success: bool = env.invoke_contract::<Result<bool, multi_sig_patterns::AuthError>>(
-        &multisig_id,
-        &Symbol::new(&env, "execute"),
-        Vec::from_array(&env, [proposal_id.into_val(&env), signer1.into_val(&env)]),
-    ).unwrap();
+    let success: bool = env
+        .invoke_contract::<Result<bool, multi_sig_patterns::AuthError>>(
+            &multisig_id,
+            &Symbol::new(&env, "execute"),
+            Vec::from_array(&env, [proposal_id.into_val(&env), signer1.into_val(&env)]),
+        )
+        .unwrap();
     assert!(success);
 
     // Verify events tracking
