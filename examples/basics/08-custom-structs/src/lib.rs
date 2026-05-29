@@ -399,7 +399,7 @@ impl CustomStructsContract {
         email: Option<String>,
     ) -> Result<UserProfile, ContractError> {
         let profile = UserProfile {
-            address,
+            address: address.clone(),
             name,
             email,
             avatar_hash: None,
@@ -437,7 +437,7 @@ impl CustomStructsContract {
         let mut profile: UserProfile = env
             .storage()
             .instance()
-            .get(&(symbol_short!("profile"), address))
+            .get(&(symbol_short!("profile"), address.clone()))
             .ok_or(ContractError::UserNotFound)?;
 
         // Update fields if provided
@@ -468,8 +468,8 @@ impl CustomStructsContract {
         portfolio_type: PortfolioType,
     ) -> Result<Portfolio, ContractError> {
         let portfolio = Portfolio {
-            owner,
-            name: name,
+            owner: owner.clone(),
+            name: name.clone(),
             description,
             holdings: Vec::new(&env),
             metadata: PortfolioMetadata {
@@ -522,7 +522,11 @@ impl CustomStructsContract {
         let mut portfolio: Portfolio = env
             .storage()
             .instance()
-            .get(&(symbol_short!("portfolio"), owner, &portfolio_name))
+            .get(&(
+                symbol_short!("portfolio"),
+                owner.clone(),
+                portfolio_name.clone(),
+            ))
             .ok_or(ContractError::PortfolioNotFound)?;
 
         // Create new holding
@@ -563,7 +567,7 @@ impl CustomStructsContract {
         language: String,
     ) -> Result<ExtendedUserProfile, ContractError> {
         // First create basic profile
-        let basic_profile = Self::create_user_profile(env.clone(), address.clone(), name.clone(), None)?;
+        let basic_profile = Self::create_user_profile(env.clone(), address, name, None)?;
 
         // Create extended profile
         let extended_profile = ExtendedUserProfile {

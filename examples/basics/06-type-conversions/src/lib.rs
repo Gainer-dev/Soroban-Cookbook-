@@ -1,6 +1,4 @@
 #![no_std]
-use soroban_sdk::{contract, contracterror, contractimpl, Env, String, TryFromVal, Val};
-
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, Address, Bytes, Env, IntoVal, Map, String,
     Symbol, TryFromVal, Val, Vec,
@@ -50,7 +48,7 @@ pub struct Config {
 pub struct TypeConversionsContract;
 
 #[contractimpl]
-impl ConversionContract {
+impl TypeConversionsContract {
     /// Demonstrates numeric TryFrom/TryInto conversions with overflow checking.
     ///
     /// Uses Rust's standard `TryInto` trait — the same trait that powers
@@ -373,9 +371,8 @@ impl ConversionContract {
 
             let mut acc: i64 = 0;
             let mut valid = true;
-            for j in start..len {
-                let b = buf[j];
-                if b < b'0' || b > b'9' {
+            for b in buf[start..len].iter().copied() {
+                if !b.is_ascii_digit() {
                     valid = false;
                     break;
                 }
