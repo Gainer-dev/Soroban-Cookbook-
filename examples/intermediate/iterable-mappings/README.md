@@ -1,22 +1,24 @@
-# Iterable Mapping Utilities
+# Iterable Mapping
 
-This example shows how to work with Soroban `Vec<u32>` collections using a few small helper-style operations:
+This example implements a small on-chain map that stays enumerable by keeping:
 
-- `filter_by(values, threshold)` keeps only values that meet the threshold.
-- `map_by(values, offset)` applies a fixed transformation to every element.
-- `reduce_sum(values)` adds the whole collection in one linear pass.
+- a `Map<Symbol, u32>` for direct key lookups, and
+- a separate `Vec<Symbol>` key index for page-based iteration.
 
-## Why this matters
+The public helpers are:
 
-These helpers are intentionally simple:
+- `set(key, value)` to insert or update entries
+- `get(key)` to fetch a single value
+- `keys(page, page_size)` to retrieve one page of keys
+- `values(page, page_size)` to retrieve one page of values
+- `remove(key)` to delete entries without leaving stale index data
 
-- they use one pass over the input vector,
-- they avoid nested loops and repeated allocations,
-- and their gas cost grows predictably with the size of the input.
+## Why this pattern matters
 
-## Suggested usage
+Native Soroban iteration over a `Map` is limited, so this pattern gives you a predictable way to enumerate state without scanning the entire contract storage layout. The tradeoff is extra storage write cost because every new key must be appended to the side list.
 
-1. Start with a small, fixed-size input vector.
-2. Apply `filter_by` when you want to keep only relevant values.
-3. Use `map_by` for a deterministic transformation.
-4. Finish with `reduce_sum` to calculate a single aggregate value.
+## Gas and storage guidance
+
+1. Use this pattern when you need page-based iteration rather than random access.
+2. Keep `page_size` small to control response size and gas usage.
+3. Expect higher write costs than a plain `Map` because the side index must be updated.

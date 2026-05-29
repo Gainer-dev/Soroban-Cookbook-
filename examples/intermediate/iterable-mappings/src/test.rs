@@ -1,46 +1,65 @@
 use super::*;
-use soroban_sdk::{vec, Env};
+use soroban_sdk::{Env, Symbol};
 
-#[test]
-fn test_filter_by_keeps_threshold_values() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, IterableMappings);
-    let client = IterableMappingsClient::new(&env, &contract_id);
-
-    let values = vec![&env, 1u32, 4u32, 7u32, 2u32];
-
-    let filtered = client.filter_by(&values, &4);
-
-    assert_eq!(filtered.len(), 2);
-    assert_eq!(filtered.get(0).unwrap(), 4u32);
-    assert_eq!(filtered.get(1).unwrap(), 7u32);
+fn key(env: &Env, value: &str) -> Symbol {
+    Symbol::new(env, value)
 }
 
 #[test]
-fn test_map_by_offsets_each_value() {
+fn test_set_and_get_roundtrip() {
     let env = Env::default();
     let contract_id = env.register_contract(None, IterableMappings);
     let client = IterableMappingsClient::new(&env, &contract_id);
 
-    let values = vec![&env, 1u32, 2u32, 3u32];
+    let alpha = key(&env, "alpha");
+    client.set(&alpha, &9);
 
-    let mapped = client.map_by(&values, &5);
-
-    assert_eq!(mapped.len(), 3);
-    assert_eq!(mapped.get(0).unwrap(), 6u32);
-    assert_eq!(mapped.get(1).unwrap(), 7u32);
-    assert_eq!(mapped.get(2).unwrap(), 8u32);
+    assert_eq!(client.get(&alpha), Some(9));
+    assert_eq!(client.len(), 1);
 }
 
 #[test]
-fn test_reduce_sum_accumulates_linear_pass() {
+fn test_keys_and_values_paginate_in_order() {
     let env = Env::default();
     let contract_id = env.register_contract(None, IterableMappings);
     let client = IterableMappingsClient::new(&env, &contract_id);
 
-    let values = vec![&env, 10u32, 20u32, 30u32];
+    let alpha = key(&env, "alpha");
+    let beta = key(&env, "beta");
+    let gamma = key(&env, "gamma");
 
-    let total = client.reduce_sum(&values);
+    client.set(&alpha, &10);
+    client.set(&beta, &20);
+    client.set(&gamma, &30);
 
-    assert_eq!(total, 60u64);
+    let first_page = client.keys(&1, &2);
+    assert_eq!(first_page.len(), 2);
+    assert_eq!(first_page.get(0).unwrap(), alpha);
+    assert_eq!(first_page.get(1).unwrap(), beta);
+
+    let second_page = client.keys(&2, &2);
+    assert_eq!(second_page.len(), 1);
+    assert_eq!(second_page.get(0).unwrap(), gamma);
+
+    let first_values = client.values(&1, &2);
+    assert_eq!(first_values.get(0).unwrap(), 10u32);
+    assert_eq!(first_values.get(1).unwrap(), 20u32);
+}
+
+#[test]
+fn test_remove_keeps_index_consistent() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, IterableMappings);
+    let client = IterableMappingsClient::new(&env, &contract_id);
+
+    let alpha = key(&env, "alpha");
+    let beta = key(&env, "beta");
+
+    client.set(&alpha, &1);
+    client.set(&beta, &2);
+    client.remove(&alpha);
+
+    assert_eq!(client.len(), 1);
+    assert_eq!(client.get(&alpha), None);
+    assert_eq!(client.keys(&1, &10).get(0).unwrap(), beta);
 }
