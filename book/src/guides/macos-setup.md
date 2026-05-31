@@ -1,345 +1,332 @@
-# macOS Environment Setup Guide
+# macOS Environment Setup
 
-A complete, copy-paste-ready guide for setting up a Soroban development environment on macOS.
+A complete guide to setting up a Soroban smart contract development environment
+on macOS. Follow each step in order — verification commands confirm each tool is
+working before you move on.
+
+## Prerequisites
+
+- macOS 12 (Monterey) or later
+- Terminal access (Terminal.app or iTerm2)
+- Admin rights to install software
 
 ---
 
-## 1. Prerequisites
+## Step 1 — Install Homebrew
 
-### 1.1 Install Homebrew (if not already installed)
-
-Homebrew is the de facto package manager for macOS and simplifies installing command-line tools.
+Homebrew is the package manager used to install several dependencies in this
+guide. Skip this step if `brew --version` already returns a version number.
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-Follow the on-screen instructions. After installation, Homebrew will tell you to add it to your PATH. **Make sure to do that!** The exact commands will look something like:
+After installation, follow any instructions printed about adding Homebrew to
+your `PATH` (required on Apple Silicon Macs).
+
+**Verify:**
+
+```bash
+brew --version
+```
+
+Expected output (version may differ):
+
+```
+Homebrew 4.x.x
+```
+
+---
+
+## Step 2 — Install Rust
+
+Soroban contracts are written in Rust. Install the official toolchain via
+`rustup`:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+When prompted, choose option `1` (default installation). Then reload your shell
+environment:
+
+```bash
+source "$HOME/.cargo/env"
+```
+
+**Verify:**
+
+```bash
+rustc --version
+cargo --version
+rustup --version
+```
+
+Expected output:
+
+```
+rustc 1.74.0 (or later)
+cargo 1.74.0 (or later)
+rustup 1.26.0 (or later)
+```
+
+---
+
+## Step 3 — Add the WebAssembly Target
+
+Soroban contracts compile to WebAssembly (WASM). Add the required target:
+
+```bash
+rustup target add wasm32-unknown-unknown
+```
+
+**Verify:**
+
+```bash
+rustup target list --installed | grep wasm32
+```
+
+Expected output:
+
+```
+wasm32-unknown-unknown
+```
+
+---
+
+## Step 4 — Install the Stellar CLI
+
+The Stellar CLI (formerly Soroban CLI) is used to build, test, and deploy
+contracts.
+
+```bash
+cargo install --locked stellar-cli --features opt
+```
+
+> This step compiles from source and may take a few minutes.
+
+**Verify:**
+
+```bash
+stellar --version
+```
+
+Expected output:
+
+```
+stellar 21.x.x (or later)
+```
+
+---
+
+## Step 5 — Install Node.js (optional)
+
+Required only if you plan to use JavaScript/TypeScript SDKs or run frontend
+tooling alongside your contracts.
+
+```bash
+brew install node
+```
+
+**Verify:**
+
+```bash
+node --version
+npm --version
+```
+
+Expected output:
+
+```
+v20.x.x (or later)
+8.x.x (or later)
+```
+
+---
+
+## Step 6 — Install Git
+
+macOS ships with a system Git, but the Homebrew version is more up to date:
+
+```bash
+brew install git
+```
+
+**Verify:**
+
+```bash
+git --version
+```
+
+Expected output:
+
+```
+git version 2.x.x
+```
+
+---
+
+## Step 7 — Clone the Cookbook
+
+```bash
+git clone https://github.com/Stellar-Cookbook/Soroban-Cookbook.git
+cd Soroban-Cookbook
+```
+
+---
+
+## Step 8 — Run a Smoke Test
+
+Confirm the full toolchain works end-to-end by running the hello-world example
+tests:
+
+```bash
+cargo test -p hello-world
+```
+
+Expected output:
+
+```
+running 6 tests
+test test::test_hello_returns_greeting_vec ... ok
+test test::test_hello_first_element_is_hello ... ok
+test test::test_hello_second_element_is_name ... ok
+test test::test_hello_with_different_names ... ok
+test test::test_hello_with_long_symbol_input ... ok
+test test::test_hello_with_single_character_name ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored
+```
+
+---
+
+## Step 9 — Configure a Testnet Identity (optional)
+
+Required only if you want to deploy contracts to the Stellar testnet.
+
+```bash
+# Add the testnet network
+stellar network add \
+  --global testnet \
+  --rpc-url https://soroban-testnet.stellar.org:443 \
+  --network-passphrase "Test SDF Network ; September 2015"
+
+# Generate a key pair
+stellar keys generate alice --network testnet
+
+# Print your public key
+stellar keys address alice
+
+# Fund the account from the testnet faucet
+stellar keys fund alice --network testnet
+```
+
+---
+
+## Full Environment Checklist
+
+Run this block to confirm every required tool is present:
+
+```bash
+brew --version
+rustc --version
+cargo --version
+rustup target list --installed | grep wasm32
+stellar --version
+git --version
+```
+
+All six commands should return version strings without errors.
+
+---
+
+## Troubleshooting
+
+### `brew: command not found` after installation
+
+Homebrew was installed but not added to `PATH`. For Apple Silicon Macs, add
+this to `~/.zprofile`:
 
 ```bash
 echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
 eval "$(/opt/homebrew/bin/brew shellenv)"
 ```
 
-Verify Homebrew is installed:
-
-```bash
-brew --version
-# Homebrew 4.x.x
-```
-
-### 1.2 Install System Dependencies
-
-Some Soroban CLI dependencies require system libraries. Install them with Homebrew:
-
-```bash
-brew install openssl pkg-config
-```
+For Intel Macs the prefix is `/usr/local` instead of `/opt/homebrew`.
 
 ---
 
-## 2. Install Rust Toolchain
+### `rustc: command not found` after Rust installation
 
-Soroban contracts are written in Rust and compiled to WebAssembly.
-
-### 2.1 Install Rust via `rustup`
+The Cargo bin directory is not on your `PATH`. Add it:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-Follow the prompts (the default installation is fine). Then reload your shell to add Cargo to your PATH:
-
-```bash
-source "$HOME/.cargo/env"
-```
-
-### 2.2 Verify Installation
-
-```bash
-rustc --version
-# rustc 1.78.0 (or newer)
-
-cargo --version
-# cargo 1.78.0 (or newer)
-```
-
-> Soroban requires **Rust 1.74 or later**. If your version is older, update it:
->
-> ```bash
-> rustup update stable
-> ```
-
-### 2.3 Add the WebAssembly Target
-
-Soroban contracts compile to WebAssembly. Add the target:
-
-```bash
-rustup target add wasm32-unknown-unknown
-```
-
-Verify it was installed:
-
-```bash
-rustup target list --installed | grep wasm32
-# wasm32-unknown-unknown
-```
-
----
-
-## 3. Install Stellar CLI
-
-The Stellar CLI handles building, testing, deploying, and invoking Soroban contracts.
-
-```bash
-cargo install --locked stellar-cli --features opt
-```
-
-> If you previously installed the old `soroban-cli`, uninstall it first:
->
-> ```bash
-> cargo uninstall soroban-cli
-> ```
-
-### 3.1 Verify Installation
-
-```bash
-stellar --version
-# stellar 21.x.x
-
-stellar contract --help
-# Should list contract-related subcommands
-```
-
----
-
-## 4. Configure Environment Variables (Optional but Recommended)
-
-Add these to your shell configuration file (`~/.zprofile` or `~/.zshrc`) to avoid repeating them every time:
-
-```bash
-# Add Cargo binaries to PATH
-export PATH="$HOME/.cargo/bin:$PATH"
-
-# Tell Cargo where OpenSSL is (if installed via Homebrew)
-export OPENSSL_DIR=$(brew --prefix openssl)
-```
-
-Then reload your shell:
-
-```bash
-source ~/.zprofile  # or ~/.zshrc
-```
-
----
-
-## 5. Set Up Your Editor (Optional but Recommended)
-
-### VS Code
-
-1. Install [VS Code](https://code.visualstudio.com/)
-2. Install the [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer) extension
-
-### JetBrains IDEs (IntelliJ / CLion / RustRover)
-
-1. Install your preferred JetBrains IDE
-2. Install the [Rust plugin](https://plugins.jetbrains.com/plugin/8182-rust)
-
----
-
-## 6. Verify Your Setup
-
-Let's run a quick sanity check to ensure everything works:
-
-### 6.1 Create a Test Project
-
-```bash
-cargo new --lib hello-soroban
-cd hello-soroban
-```
-
-### 6.2 Configure Cargo.toml
-
-Replace the contents of `Cargo.toml` with:
-
-```toml
-[package]
-name = "hello-soroban"
-version = "0.1.0"
-edition = "2021"
-
-[lib]
-crate-type = ["cdylib", "rlib"]
-
-[dependencies]
-soroban-sdk = "21.7.0"
-
-[dev-dependencies]
-soroban-sdk = { version = "21.7.0", features = ["testutils"] }
-
-[profile.release]
-opt-level = "z"
-overflow-checks = true
-debug = 0
-strip = "symbols"
-debug-assertions = false
-panic = "abort"
-codegen-units = 1
-lto = true
-```
-
-### 6.3 Write a Simple Contract
-
-Replace the contents of `src/lib.rs` with:
-
-```rust
-#![no_std]
-
-use soroban_sdk::{contract, contractimpl, symbol_short, vec, Env, Symbol, Vec};
-
-#[contract]
-pub struct HelloContract;
-
-#[contractimpl]
-impl HelloContract {
-    pub fn hello(env: Env, to: Symbol) -> Vec<Symbol> {
-        vec![&env, symbol_short!("Hello"), to]
-    }
-}
-
-#[cfg(test)]
-mod test;
-```
-
-### 6.4 Add Tests
-
-Create `src/test.rs`:
-
-```rust
-#![cfg(test)]
-
-use super::*;
-use soroban_sdk::{symbol_short, vec, Env};
-
-#[test]
-fn test_hello() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, HelloContract);
-    let client = HelloContractClient::new(&env, &contract_id);
-
-    let result = client.hello(&symbol_short!("World"));
-    assert_eq!(result, vec![&env, symbol_short!("Hello"), symbol_short!("World")]);
-}
-```
-
-### 6.5 Run the Tests
-
-```bash
-cargo test
-```
-
-You should see:
-
-```
-running 1 test
-test test::test_hello ... ok
-
-test result: ok. 1 passed; 0 failed
-```
-
-If you see this, congratulations! Your macOS Soroban development environment is set up correctly.
-
----
-
-## 7. Troubleshooting
-
-### Problem: `rustup` command not found
-
-**Solution**: Restart your terminal or reload your shell configuration:
-
-```bash
+echo 'source "$HOME/.cargo/env"' >> ~/.zshrc
 source "$HOME/.cargo/env"
 ```
 
 ---
 
-### Problem: `cargo install --locked stellar-cli --features opt` fails
+### `wasm32-unknown-unknown` target missing after `rustup target add`
 
-#### If the error mentions OpenSSL:
-
-```bash
-brew install openssl
-export OPENSSL_DIR=$(brew --prefix openssl)
-cargo install --locked stellar-cli --features opt
-```
-
-#### If the error mentions "linker 'rust-lld' not found":
+Your shell may be using a different Rust toolchain. Confirm the active
+toolchain and re-add the target:
 
 ```bash
-rustup component add llvm-tools-preview
-```
-
-#### If you get a generic build error:
-
-Try cleaning Cargo's cache and reinstalling:
-
-```bash
-cargo clean
-cargo install --locked stellar-cli --features opt
-```
-
----
-
-### Problem: `stellar` command not found
-
-**Solution**: Add Cargo's bin directory to your PATH:
-
-```bash
-export PATH="$HOME/.cargo/bin:$PATH"
-```
-
-Add this to your `~/.zprofile` or `~/.zshrc` to make it permanent, then reload your shell.
-
----
-
-### Problem: `error[E0463]: can't find crate for 'std'`
-
-**Solution**: Install the WebAssembly target:
-
-```bash
+rustup show
 rustup target add wasm32-unknown-unknown
 ```
 
 ---
 
-### Problem: Homebrew installation fails on Apple Silicon (M1/M2/M3)
+### `stellar` command not found after `cargo install`
 
-**Solution**: Make sure you're using the Apple Silicon version of Homebrew (installed in `/opt/homebrew`). If you have the Intel version installed, uninstall it and reinstall:
+`~/.cargo/bin` is not on your `PATH`. Add it:
 
 ```bash
-# Uninstall Intel Homebrew (if installed)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"
-
-# Install Apple Silicon Homebrew
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 ```
 
-Don't forget to add Homebrew to your PATH as instructed during installation.
+---
+
+### `cargo install stellar-cli` fails with linker errors
+
+Install the Xcode Command Line Tools, which provide the system linker:
+
+```bash
+xcode-select --install
+```
+
+Then retry the install:
+
+```bash
+cargo install --locked stellar-cli --features opt
+```
 
 ---
 
-## 8. Next Steps
+### `cargo test` fails with `error: no matching package named hello-world`
 
-Now that your environment is set up, check out:
+You are not in the repository root. Navigate there first:
 
-- [Getting Started](./getting-started.md) — Write your first Soroban contract
-- [Testing Guide](./testing.md) — Learn how to test Soroban contracts effectively
-- [Examples](../examples/basics.md) — Explore more contract patterns
+```bash
+cd /path/to/Soroban-Cookbook
+cargo test -p hello-world
+```
 
 ---
 
-## Additional Resources
+### Network timeout when funding testnet account
 
-- [Soroban Official Documentation](https://developers.stellar.org/docs/smart-contracts)
-- [Stellar Discord](https://discord.gg/stellardev) — #soroban-dev channel for help
-- [Rust Book](https://doc.rust-lang.org/book/) — Learn Rust (if you're new to it)
+The testnet faucet is occasionally rate-limited. Wait 60 seconds and retry, or
+use the web faucet at [https://friendbot.stellar.org](https://friendbot.stellar.org)
+with your public key as the `addr` parameter.
+
+---
+
+## Next Steps
+
+- [Getting Started Guide](./getting-started.md) — write and deploy your first contract
+- [Testing Guide](./testing.md) — unit tests, fixtures, and error testing
+- [Hello World Example](../examples/basics.md) — the simplest possible contract
