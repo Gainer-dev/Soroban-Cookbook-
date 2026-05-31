@@ -81,6 +81,12 @@ fn test_convert_strings_from_symbol() {
     let contract_id = env.register_contract(None, ConversionContract);
     let client = ConversionContractClient::new(&env, &contract_id);
 
+    let input = String::from_str(&env, "hello");
+    let (s, sym) = client.convert_strings(&input, &true);
+    assert_eq!(s, input);
+    assert_eq!(sym, Symbol::new(&env, "hello"));
+}
+
 #[test]
 #[should_panic(expected = "InvalidStringFormat")]
 fn test_convert_strings_too_long() {
@@ -89,8 +95,6 @@ fn test_convert_strings_too_long() {
     let long = String::from_str(&env, "this_string_is_thirty_three_chars_!");
     setup(&env).convert_strings(&long, &true);
 }
-
-    let result = client.convert_collections(&input_vec);
 
 #[test]
 fn test_convert_collections() {

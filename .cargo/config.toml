@@ -1,3 +1,4 @@
+# Use the wasm32v1-none target for Soroban-compatible WASM builds.
 [target.wasm32v1-none]
 # Soroban's WASM VM validator rejects the padded-LEB128 table-index encoding
 # that LLVM's fat-LTO backend produces when the whole workspace is compiled

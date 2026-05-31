@@ -103,7 +103,7 @@ fn test_transfer_benchmark() {
     let user2 = Address::generate(&env);
 
     client.set_balance(&admin, &user1, &1000);
-    
+
     println!("--- Transfer with Auth Benchmark ---");
     env.budget().reset_default();
     client.transfer(&user1, &user2, &100);
