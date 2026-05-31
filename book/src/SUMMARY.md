@@ -5,7 +5,9 @@
 # Getting Started
 
 - [Setup Environment](./guides/getting-started.md)
+- [macOS Setup Guide](./guides/macos-setup.md)
 - [Testing Guide](./guides/testing.md)
+- [Local Simulation](./guides/local-simulation.md)
 - [Deployment Guide](./guides/deployment.md)
 - [Ethereum to Soroban](./guides/ethereum-to-soroban.md)
 
@@ -46,6 +48,7 @@
 - [Style Guide](./docs/style-guide.md)
 - [Glossary](./docs/glossary.md)
 - [Common Patterns](./docs/common-patterns.md)
+- [Factory, Proxy, and Registry Patterns](./docs/cross-contract-patterns.md)
 - [Troubleshooting](./docs/troubleshooting.md)
 
 # Contributing
