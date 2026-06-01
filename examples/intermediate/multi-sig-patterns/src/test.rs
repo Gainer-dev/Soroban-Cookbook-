@@ -104,6 +104,34 @@ fn test_double_approval() {
 }
 
 #[test]
+fn test_cancel_proposal() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register_contract(None, MultiPartyAuth);
+    let client = MultiPartyAuthClient::new(&env, &contract_id);
+
+    let signer1 = Address::generate(&env);
+    let signer2 = Address::generate(&env);
+    let signers = vec![&env, signer1.clone(), signer2.clone()];
+
+    client.initialize(&2, &signers);
+    let proposal_id = client.create_proposal(&signer1);
+
+    client.approve(&proposal_id, &signer1);
+    client.cancel(&proposal_id, &signer1);
+
+    let proposal = client.get_proposal(&proposal_id);
+    assert!(proposal.canceled);
+
+    let result = client.try_execute(&proposal_id, &signer1);
+    assert_eq!(result, Err(Ok(AuthError::AlreadyCanceled)));
+
+    let result = client.try_approve(&proposal_id, &signer2);
+    assert_eq!(result, Err(Ok(AuthError::AlreadyCanceled)));
+}
+
+#[test]
 fn test_execute_with_threshold() {
     let env = Env::default();
     env.mock_all_auths();

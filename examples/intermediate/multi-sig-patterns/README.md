@@ -20,10 +20,11 @@ pub fn initialize(env: Env, threshold: u32, signers: Vec<Address>) -> Result<(),
 pub fn create_proposal(env: Env, proposer: Address) -> Result<u32, AuthError>
 pub fn approve(env: Env, proposal_id: u32, signer: Address) -> Result<(), AuthError>
 pub fn execute(env: Env, proposal_id: u32, executor: Address) -> Result<bool, AuthError>
+pub fn cancel(env: Env, proposal_id: u32, signer: Address) -> Result<(), AuthError>
 pub fn get_proposal(env: Env, proposal_id: u32) -> Result<Proposal, AuthError>
 ```
 
-This pattern allows signers to approve proposals over multiple transactions. Once the threshold is met, anyone can execute the proposal.
+This pattern allows signers to approve proposals over multiple transactions. Once the threshold is met, anyone can execute the proposal or an authorized signer can cancel it before execution.
 
 **Use Cases:**
 - Multi-sig wallets
@@ -77,6 +78,9 @@ client.approve(&proposal_id, &bob).unwrap();
 
 // Execute once threshold is met
 client.execute(&proposal_id, &alice).unwrap();
+
+// Or cancel before execution if the proposal should be rejected
+client.cancel(&proposal_id, &alice).unwrap();
 ```
 
 ### Authorization Vectors
@@ -103,6 +107,7 @@ Proposals track approvals and execution status:
 pub struct Proposal {
     pub approvals: Vec<Address>,
     pub executed: bool,
+    pub canceled: bool,
 }
 ```
 
