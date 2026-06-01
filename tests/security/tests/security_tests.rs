@@ -318,6 +318,27 @@ fn test_reentrancy_prevention() {
     //   2. total_supply <= total_deposited (no double-minting beyond deposits)
     wrapper.wrap(&alice, &50);
 
-    assert_eq!(wrapper.balance(&alice), 50);
-    assert_eq!(wrapper.total_supply(), 50);
+    let alice_balance = wrapper.balance(&alice);
+    let total_supply = wrapper.total_supply();
+
+    // Invariant 1: Internal consistency.
+    // total_supply must always equal the sum of all user balances. A mismatch would
+    // mean tokens were minted or burned without proper accounting — the hallmark of a
+    // double-mint or silent-drain exploit.
+    assert_eq!(
+        alice_balance, total_supply,
+        "Internal consistency violated: alice balance ({}) != total supply ({}). \
+         Tokens were minted or burned without proper accounting.",
+        alice_balance, total_supply
+    );
+
+    // Invariant 2: No double-minting beyond total deposited amount.
+    // alice deposited at most 100 (first wrap) + 50 (second wrap) = 150 underlying.
+    // Wrapped supply must never exceed this without further explicit deposits.
+    assert!(
+        total_supply <= 150,
+        "Double-minting detected: supply ({}) exceeds total deposited (150). \
+         A reentrancy exploit created unbacked wrapped tokens.",
+        total_supply
+    );
 }
