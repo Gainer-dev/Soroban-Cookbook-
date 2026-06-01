@@ -4,7 +4,7 @@
 use soroban_sdk::{
     contract, contractimpl, symbol_short,
     testutils::Address as _,
-    Address, Env, IntoVal,
+    Address, Env,
 };
 use token_wrapper;
 
@@ -34,7 +34,7 @@ impl MaliciousToken {
         env.storage().instance().set(&symbol_short!("ramt"), &amount);
     }
 
-    pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
+    pub fn transfer(env: Env, _from: Address, _to: Address, _amount: i128) {
         let reent_key = symbol_short!("reent");
         let reentered: bool = env.storage().instance().get(&reent_key).unwrap_or(false);
 
@@ -56,17 +56,17 @@ impl MaliciousToken {
         }
     }
 
-    pub fn balance(env: Env, _id: Address) -> i128 {
+    pub fn balance(_env: Env, _id: Address) -> i128 {
         // Mock large balance so collateral checks succeed
         10_000_000i128
     }
 
     // Include dummy/noop implementations of standard SEP-41 methods if needed
-    pub fn allowance(env: Env, _from: Address, _spender: Address) -> i128 { 0 }
-    pub fn approve(env: Env, _from: Address, _spender: Address, _amount: i128, _live_until_ledgers: u32) {}
-    pub fn burn(env: Env, _from: Address, _amount: i128) {}
-    pub fn burn_from(env: Env, _spender: Address, _from: Address, _amount: i128) {}
-    pub fn decimals(env: Env) -> u32 { 7 }
+    pub fn allowance(_env: Env, _from: Address, _spender: Address) -> i128 { 0 }
+    pub fn approve(_env: Env, _from: Address, _spender: Address, _amount: i128, _live_until_ledgers: u32) {}
+    pub fn burn(_env: Env, _from: Address, _amount: i128) {}
+    pub fn burn_from(_env: Env, _spender: Address, _from: Address, _amount: i128) {}
+    pub fn decimals(_env: Env) -> u32 { 7 }
     pub fn name(env: Env) -> soroban_sdk::String { soroban_sdk::String::from_str(&env, "Malicious") }
     pub fn symbol(env: Env) -> soroban_sdk::String { soroban_sdk::String::from_str(&env, "MAL") }
 }
