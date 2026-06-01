@@ -20,8 +20,9 @@ Non-fungible tokens & marketplaces on Soroban.
 - Bid management
 - Royalty splits
 
-## Placeholder
-`examples/nfts/` ready for first implementation.
+## NFT Example
+
+- `examples/nfts/02-nft-metadata/` — NFT metadata storage with off-chain token URI patterns, optional on-chain structured metadata, and IPFS integration guidance.
 
 ## Prerequisites
 - [Basics](../basics.md)

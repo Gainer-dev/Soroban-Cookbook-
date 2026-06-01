@@ -10,6 +10,7 @@ This category contains examples related to Non-Fungible Tokens (NFTs). These con
 
 ## Planned Examples
 
+- `02-nft-metadata`: NFT metadata storage patterns with optional on-chain metadata and IPFS integration.
 - `01-basic-nft`: A simple implementation of a mintable NFT.
 - `02-nft-marketplace`: A contract for listing and trading NFTs.
 - `03-nft-with-onchain-metadata`: An example of storing NFT metadata directly on the ledger.
