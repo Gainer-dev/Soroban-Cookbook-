@@ -78,15 +78,15 @@ impl TokenWrapper {
 
         user.require_auth();
 
-        let wrapper = env.current_contract_address();
-        TokenClient::new(&env, &underlying).transfer(&user, &wrapper, &amount);
-
         env.storage()
             .persistent()
             .set(&DataKey::Balance(user.clone()), &new_balance);
         env.storage()
             .instance()
             .set(&DataKey::TotalSupply, &new_supply);
+
+        let wrapper = env.current_contract_address();
+        TokenClient::new(&env, &underlying).transfer(&user, &wrapper, &amount);
 
         env.events().publish((EVENT_WRAP, user), amount);
         Ok(new_balance)

@@ -84,6 +84,9 @@ jobs:
             fi
           done
 
+      - name: Run security tests
+        run: cargo test --package security-tests
+
       - name: Run tests (fallback)
         if: github.event_name != 'pull_request'
         run: cargo test --workspace --all-features
