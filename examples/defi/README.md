@@ -7,6 +7,7 @@ This category contains examples related to Decentralized Finance (DeFi) protocol
 - **Automated Market Makers (AMMs)**: Examples of different AMM designs.
 - **Lending & Borrowing**: Implementations of lending pools and collateralized debt positions.
 - **Vaults & Yield Farming**: Contracts for yield aggregation and automated strategies.
+- **Farming Pool**: Multi-pool reward distribution system with admin controls.
 - **Escrow**: Trustless escrow contracts for secure value exchange.
 
 ## Planned Examples
