@@ -69,7 +69,6 @@ Compressing byte payloads before storing them can reduce the storage footprint a
 Compression can be less helpful when data is already random, small, or minimally repetitive. In those cases, the storage entry may be larger after encoding and the additional on-chain compute can increase gas use.
 
 **Example:** [Compressed Storage Example](../examples/basics/13-compressed-storage/)
-
 ---
 
 ## When to Use Which?

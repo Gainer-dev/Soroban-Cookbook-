@@ -1,6 +1,8 @@
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol, token};
+use soroban_sdk::{
+    contract, contractimpl, contracttype, symbol_short, token, Address, Env, Symbol,
+};
 
 #[contract]
 pub struct SimpleSwapContract;
@@ -91,7 +93,10 @@ impl SimpleSwapContract {
         env.storage().instance().set(&DataKey::RateNum, &rate_num);
         env.storage().instance().set(&DataKey::RateDen, &rate_den);
 
-        env.events().publish((EVENT_NS, EVENT_PAIR), (token_a, token_b, rate_num, rate_den));
+        env.events().publish(
+            (EVENT_NS, EVENT_PAIR),
+            (token_a, token_b, rate_num, rate_den),
+        );
     }
 
     pub fn update_pair(
@@ -111,7 +116,10 @@ impl SimpleSwapContract {
         env.storage().instance().set(&DataKey::RateNum, &rate_num);
         env.storage().instance().set(&DataKey::RateDen, &rate_den);
 
-        env.events().publish((EVENT_NS, EVENT_PAIR), (token_a, token_b, rate_num, rate_den));
+        env.events().publish(
+            (EVENT_NS, EVENT_PAIR),
+            (token_a, token_b, rate_num, rate_den),
+        );
     }
 
     pub fn quote(env: Env, sell_token: Address, sell_amount: i128) -> i128 {
@@ -122,9 +130,17 @@ impl SimpleSwapContract {
         let token_b = this.token_b(&env);
 
         if sell_token == token_a {
-            sell_amount.checked_mul(num).unwrap().checked_div(den).unwrap()
+            sell_amount
+                .checked_mul(num)
+                .unwrap()
+                .checked_div(den)
+                .unwrap()
         } else if sell_token == token_b {
-            sell_amount.checked_mul(den).unwrap().checked_div(num).unwrap()
+            sell_amount
+                .checked_mul(den)
+                .unwrap()
+                .checked_div(num)
+                .unwrap()
         } else {
             panic!("unsupported sell token");
         }
@@ -153,16 +169,28 @@ impl SimpleSwapContract {
         };
 
         let buy_amount = if sell_token == token_a {
-            sell_amount.checked_mul(num).unwrap().checked_div(den).unwrap()
+            sell_amount
+                .checked_mul(num)
+                .unwrap()
+                .checked_div(den)
+                .unwrap()
         } else {
-            sell_amount.checked_mul(den).unwrap().checked_div(num).unwrap()
+            sell_amount
+                .checked_mul(den)
+                .unwrap()
+                .checked_div(num)
+                .unwrap()
         };
 
         assert!(buy_amount >= min_buy_amount, "slippage exceeded");
 
         let contract_addr = this.contract_address(&env);
 
-        token::Client::new(&env, &sell_token).transfer(&env.invoker(), &contract_addr, &sell_amount);
+        token::Client::new(&env, &sell_token).transfer(
+            &env.invoker(),
+            &contract_addr,
+            &sell_amount,
+        );
         token::Client::new(&env, &buy_token).transfer(&contract_addr, &recipient, &buy_amount);
 
         env.events().publish(

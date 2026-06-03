@@ -1,6 +1,6 @@
 # Timelock Contract
 
-A secure timelock implementation with admin controls for delayed execution of operations.
+A secure timelock implementation with admin controls for delayed execution of operations. Operations are queued with a mandatory waiting period before they can be executed, providing a safety window for review or cancellation.
 
 ## Features
 
@@ -57,10 +57,16 @@ let is_paused = client.is_paused();
 
 Run the test suite:
 ```bash
-cargo test
+cargo test -p timelock
 ```
 
 Build as WASM:
 ```bash
 cargo build --target wasm32-unknown-unknown --release
 ```
+
+## 📚 Related Examples
+
+- [01-multi-party-auth](../01-multi-party-auth/) — Multi-party authorization patterns
+- [Governance Examples](../../governance/) — DAOs and voting systems that use timelocks
+- [Advanced Examples](../) — Other complex patterns

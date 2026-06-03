@@ -36,9 +36,7 @@
 
 #![no_std]
 
-use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol,
-};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -255,9 +253,7 @@ impl VaultContract {
         // max_allowed = new_total * max_allocation_bps / BPS_DENOM
         // We want: amount <= new_total * max_allocation_bps / BPS_DENOM
         // Rearranged: amount * BPS_DENOM <= new_total * max_allocation_bps
-        if amount
-            .checked_mul(BPS_DENOM)
-            .expect("Overflow")
+        if amount.checked_mul(BPS_DENOM).expect("Overflow")
             > new_total
                 .checked_mul(params.max_allocation_bps)
                 .expect("Overflow")

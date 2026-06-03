@@ -32,17 +32,9 @@ impl QueueContract {
     /// # Panics
     /// Panics if the queue is full (exceeds MAX_QUEUE_SIZE).
     pub fn enqueue(env: Env, item: Symbol) {
-        let tail: u32 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Tail)
-            .unwrap_or(0);
+        let tail: u32 = env.storage().persistent().get(&DataKey::Tail).unwrap_or(0);
 
-        let head: u32 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Head)
-            .unwrap_or(0);
+        let head: u32 = env.storage().persistent().get(&DataKey::Head).unwrap_or(0);
 
         // Check for overflow
         if tail - head >= MAX_QUEUE_SIZE {
@@ -55,9 +47,7 @@ impl QueueContract {
             .set(&(DataKey::Item, tail), &item);
 
         // Update tail
-        env.storage()
-            .persistent()
-            .set(&DataKey::Tail, &(tail + 1));
+        env.storage().persistent().set(&DataKey::Tail, &(tail + 1));
     }
 
     /// Dequeue and return the item at the front of the queue.
@@ -68,17 +58,9 @@ impl QueueContract {
     /// # Panics
     /// Panics if the queue is empty.
     pub fn dequeue(env: Env) -> Symbol {
-        let head: u32 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Head)
-            .unwrap_or(0);
+        let head: u32 = env.storage().persistent().get(&DataKey::Head).unwrap_or(0);
 
-        let tail: u32 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Tail)
-            .unwrap_or(0);
+        let tail: u32 = env.storage().persistent().get(&DataKey::Tail).unwrap_or(0);
 
         // Check for empty queue
         if head >= tail {
@@ -93,9 +75,7 @@ impl QueueContract {
             .unwrap_or_else(|| panic!("Item not found at head"));
 
         // Update head
-        env.storage()
-            .persistent()
-            .set(&DataKey::Head, &(head + 1));
+        env.storage().persistent().set(&DataKey::Head, &(head + 1));
 
         item
     }
@@ -108,17 +88,9 @@ impl QueueContract {
     /// # Panics
     /// Panics if the queue is empty.
     pub fn peek(env: Env) -> Symbol {
-        let head: u32 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Head)
-            .unwrap_or(0);
+        let head: u32 = env.storage().persistent().get(&DataKey::Head).unwrap_or(0);
 
-        let tail: u32 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Tail)
-            .unwrap_or(0);
+        let tail: u32 = env.storage().persistent().get(&DataKey::Tail).unwrap_or(0);
 
         if head >= tail {
             panic!("Queue is empty");
@@ -135,17 +107,9 @@ impl QueueContract {
     /// # Returns
     /// The size of the queue
     pub fn size(env: Env) -> u32 {
-        let head: u32 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Head)
-            .unwrap_or(0);
+        let head: u32 = env.storage().persistent().get(&DataKey::Head).unwrap_or(0);
 
-        let tail: u32 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Tail)
-            .unwrap_or(0);
+        let tail: u32 = env.storage().persistent().get(&DataKey::Tail).unwrap_or(0);
 
         tail.saturating_sub(head)
     }

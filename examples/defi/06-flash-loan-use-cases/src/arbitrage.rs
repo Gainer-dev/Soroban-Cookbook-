@@ -8,7 +8,7 @@
 //! 3. Swap B → A on pool 2 at a better rate
 //! 4. Return borrowed A + fee; keep the profit
 
-use soroban_sdk::{contract, contractimpl, contractclient, contracttype, token, Address, Env};
+use soroban_sdk::{contract, contractclient, contractimpl, contracttype, token, Address, Env};
 
 // ---------------------------------------------------------------------------
 // External contract interfaces
@@ -17,8 +17,7 @@ use soroban_sdk::{contract, contractimpl, contractclient, contracttype, token, A
 /// Simplified AMM interface.
 #[contractclient(name = "AMMClient")]
 pub trait AMM {
-    fn swap(env: Env, from_token: Address, to_token: Address, amount: i128, min_out: i128)
-        -> i128;
+    fn swap(env: Env, from_token: Address, to_token: Address, amount: i128, min_out: i128) -> i128;
 }
 
 /// Flash loan provider interface (matches 05-flash-loans).
@@ -74,8 +73,11 @@ impl ArbitrageContract {
         env.storage().temporary().set(&DataKey::Pool2, &pool2);
         env.storage().temporary().set(&DataKey::TokenB, &token_b);
 
-        FlashLoanClient::new(&env, &flash_loan)
-            .flash_loan(&env.current_contract_address(), &token_a, &amount);
+        FlashLoanClient::new(&env, &flash_loan).flash_loan(
+            &env.current_contract_address(),
+            &token_a,
+            &amount,
+        );
 
         env.storage().temporary().remove(&DataKey::Pool1);
         env.storage().temporary().remove(&DataKey::Pool2);
@@ -86,13 +88,7 @@ impl ArbitrageContract {
     ///
     /// Security note: in production you would validate `initiator` against a
     /// stored trusted provider address before proceeding.
-    pub fn on_flash_loan(
-        env: Env,
-        initiator: Address,
-        token: Address,
-        amount: i128,
-        fee: i128,
-    ) {
+    pub fn on_flash_loan(env: Env, initiator: Address, token: Address, amount: i128, fee: i128) {
         let pool1: Address = env.storage().temporary().get(&DataKey::Pool1).unwrap();
         let pool2: Address = env.storage().temporary().get(&DataKey::Pool2).unwrap();
         let token_b: Address = env.storage().temporary().get(&DataKey::TokenB).unwrap();

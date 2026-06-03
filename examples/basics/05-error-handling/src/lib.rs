@@ -122,7 +122,6 @@ impl ErrorDemoContract {
         if env.storage().instance().has(&DataKey::Admin) {
             panic!("contract already initialised");
         }
-
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::Paused, &false);
     }
@@ -224,7 +223,6 @@ impl ErrorDemoContract {
                 action: symbol_short!("withdraw"),
             },
         );
-
         Ok(new_balance)
     }
 

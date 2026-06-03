@@ -1,6 +1,8 @@
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Symbol, Vec};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Symbol, Vec,
+};
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -109,7 +111,9 @@ impl RoleBasedAccessControl {
             return Err(RbacError::Unauthorized);
         }
 
-        env.storage().persistent().remove(&DataKey::UserRole(account.clone()));
+        env.storage()
+            .persistent()
+            .remove(&DataKey::UserRole(account.clone()));
 
         env.events().publish(
             (CONTRACT_NS, ACTION_ROLE_CHANGE, account.clone()),
@@ -129,11 +133,7 @@ impl RoleBasedAccessControl {
         user_role as u32 >= role as u32
     }
 
-    pub fn require_role(
-        env: Env,
-        caller: Address,
-        allowed: Vec<Role>,
-    ) -> Result<(), RbacError> {
+    pub fn require_role(env: Env, caller: Address, allowed: Vec<Role>) -> Result<(), RbacError> {
         caller.require_auth();
         Self::require_initialized(&env)?;
 
@@ -147,7 +147,11 @@ impl RoleBasedAccessControl {
     }
 
     pub fn admin_action(env: Env, caller: Address, value: u64) -> Result<u64, RbacError> {
-        Self::require_role(env.clone(), caller.clone(), Vec::from_array(&env, [Role::Admin]))?;
+        Self::require_role(
+            env.clone(),
+            caller.clone(),
+            Vec::from_array(&env, [Role::Admin]),
+        )?;
         Ok(value * 2)
     }
 
@@ -166,11 +170,7 @@ impl RoleBasedAccessControl {
             .unwrap_or(Role::User)
     }
 
-    fn require_can_manage(
-        env: &Env,
-        caller: &Address,
-        target: &Role,
-    ) -> Result<(), RbacError> {
+    fn require_can_manage(env: &Env, caller: &Address, target: &Role) -> Result<(), RbacError> {
         let caller_role = Self::get_role_internal(env, caller);
         if Self::can_grant(caller_role, *target) {
             Ok(())

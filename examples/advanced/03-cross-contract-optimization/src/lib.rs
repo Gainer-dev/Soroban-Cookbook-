@@ -87,11 +87,7 @@ pub struct OptimizedCaller;
 #[contractimpl]
 impl OptimizedCaller {
     /// Invoke the target contract once with a batched update argument.
-    pub fn invoke_updates_batched(
-        env: Env,
-        target: Address,
-        updates: Vec<PackedUpdate>,
-    ) -> i128 {
+    pub fn invoke_updates_batched(env: Env, target: Address, updates: Vec<PackedUpdate>) -> i128 {
         let client = TargetContractClient::new(&env, &target);
         client.batch_update_entries(&updates)
     }

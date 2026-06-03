@@ -48,6 +48,7 @@
 - [Quick Reference](./docs/quick-reference.md)
 - [Best Practices](./docs/best-practices.md)
 - [Style Guide](./docs/style-guide.md)
+- [Performance Benchmarks](./docs/benchmarks.md)
 - [Glossary](./docs/glossary.md)
 - [Common Patterns](./docs/common-patterns.md)
 - [Factory, Proxy, and Registry Patterns](./docs/cross-contract-patterns.md)

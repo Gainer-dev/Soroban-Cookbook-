@@ -17,9 +17,7 @@
 
 #![allow(unused_variables)]
 
-use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, token, Address, Env,
-};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, token, Address, Env};
 
 #[contracttype]
 #[derive(Clone)]
@@ -58,13 +56,7 @@ impl SecureReceiverContract {
     /// 3. Contract must hold ≥ `amount + fee` before approving
     /// 4. Approve **exactly** `amount + fee`, expiring after this sequence
     /// 5. Emit audit event
-    pub fn on_flash_loan(
-        env: Env,
-        initiator: Address,
-        token: Address,
-        amount: i128,
-        fee: i128,
-    ) {
+    pub fn on_flash_loan(env: Env, initiator: Address, token: Address, amount: i128, fee: i128) {
         // Check 1: caller identity
         let provider: Address = env.storage().instance().get(&DataKey::Provider).unwrap();
         if initiator != provider {
@@ -90,7 +82,12 @@ impl SecureReceiverContract {
         }
 
         // Check 4: approve **only** the exact repayment, expiring immediately
-        token_client.approve(&contract, &initiator, &repay, &(env.ledger().sequence() + 1));
+        token_client.approve(
+            &contract,
+            &initiator,
+            &repay,
+            &(env.ledger().sequence() + 1),
+        );
 
         // Check 5: emit audit event
         env.events().publish(

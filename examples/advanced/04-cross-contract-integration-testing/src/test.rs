@@ -1,5 +1,5 @@
 use super::*;
-use soroban_sdk::{testutils::Address as _, testutils::Ledger as _, symbol_short, Address, Env};
+use soroban_sdk::{symbol_short, testutils::Address as _, testutils::Ledger as _, Address, Env};
 
 #[test]
 fn test_cross_contract_integration_and_upgrade_simulation() {
@@ -12,7 +12,9 @@ fn test_cross_contract_integration_and_upgrade_simulation() {
 
     // Upload a placeholder WASM for factory initialization (example pattern)
     let template_wasm: [u8; 0] = [0u8; 0];
-    let wasm_hash = env.deployer().upload_contract_wasm(template_wasm.as_slice());
+    let wasm_hash = env
+        .deployer()
+        .upload_contract_wasm(template_wasm.as_slice());
 
     let factory_id = env.register_contract(None, Factory);
     let factory_client = FactoryClient::new(&env, &factory_id);

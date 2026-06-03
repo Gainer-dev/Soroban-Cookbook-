@@ -109,10 +109,7 @@ fn cancel_removes_proposal() {
 #[test]
 fn cancel_with_no_proposal_is_rejected() {
     let (_env, _admin, client) = setup();
-    assert_eq!(
-        client.try_cancel_upgrade(),
-        Err(Ok(AdminError::NoProposal))
-    );
+    assert_eq!(client.try_cancel_upgrade(), Err(Ok(AdminError::NoProposal)));
 }
 
 // ---------------------------------------------------------------------------
@@ -124,10 +121,7 @@ fn execute_before_delay_is_rejected() {
     let (env, _admin, client) = setup();
     client.propose_upgrade(&dummy_hash(&env, 8), &MIN_DELAY);
     // do NOT advance time
-    assert_eq!(
-        client.try_execute_upgrade(),
-        Err(Ok(AdminError::TooEarly))
-    );
+    assert_eq!(client.try_execute_upgrade(), Err(Ok(AdminError::TooEarly)));
 }
 
 #[test]

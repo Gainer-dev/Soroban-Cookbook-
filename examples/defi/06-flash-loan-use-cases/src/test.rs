@@ -1,7 +1,9 @@
 #![cfg(test)]
 
 use soroban_sdk::testutils::Address as _;
-use soroban_sdk::{contract, contractimpl, contractclient, symbol_short, token, Address, Env, IntoVal};
+use soroban_sdk::{
+    contract, contractclient, contractimpl, symbol_short, token, Address, Env, IntoVal,
+};
 
 // ============================================================
 // Security pattern tests
@@ -168,14 +170,23 @@ mod arbitrage_tests {
     #[contractclient(name = "MockAMMClient")]
     trait MockAMMTrait {
         fn init(env: Env, rate_bps: u32);
-        fn swap(env: Env, from_token: Address, to_token: Address, amount: i128, min_out: i128)
-            -> i128;
+        fn swap(
+            env: Env,
+            from_token: Address,
+            to_token: Address,
+            amount: i128,
+            min_out: i128,
+        ) -> i128;
     }
 
     fn make_token(env: &Env) -> (Address, token::Client, token::StellarAssetClient) {
         let admin = Address::generate(env);
         let addr = env.register_stellar_asset_contract(admin);
-        (addr.clone(), token::Client::new(env, &addr), token::StellarAssetClient::new(env, &addr))
+        (
+            addr.clone(),
+            token::Client::new(env, &addr),
+            token::StellarAssetClient::new(env, &addr),
+        )
     }
 
     #[test]
@@ -226,7 +237,7 @@ mod arbitrage_tests {
 
 mod refinancing_tests {
     use super::*;
-    use crate::refinancing::{RefinancingContract, RefinancingContractClient, DataKey};
+    use crate::refinancing::{DataKey, RefinancingContract, RefinancingContractClient};
 
     /// Mock lending pool
     #[contract]
@@ -264,7 +275,11 @@ mod refinancing_tests {
     fn make_token(env: &Env) -> (Address, token::Client, token::StellarAssetClient) {
         let admin = Address::generate(env);
         let addr = env.register_stellar_asset_contract(admin);
-        (addr.clone(), token::Client::new(env, &addr), token::StellarAssetClient::new(env, &addr))
+        (
+            addr.clone(),
+            token::Client::new(env, &addr),
+            token::StellarAssetClient::new(env, &addr),
+        )
     }
 
     #[test]
@@ -295,7 +310,9 @@ mod refinancing_tests {
         env.as_contract(&refi_addr, || {
             env.storage().temporary().set(&DataKey::OldPool, &old_pool);
             env.storage().temporary().set(&DataKey::NewPool, &new_pool);
-            env.storage().temporary().set(&DataKey::Collateral, &coll_addr);
+            env.storage()
+                .temporary()
+                .set(&DataKey::Collateral, &coll_addr);
             env.storage().temporary().set(&DataKey::DebtAmount, &amount);
         });
 

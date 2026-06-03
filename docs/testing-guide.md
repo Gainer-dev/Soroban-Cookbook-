@@ -13,8 +13,6 @@ Testing is critical for smart contract development. This guide covers:
 - Snapshot testing and coverage tools
 - Common testing patterns and anti-patterns
 
----
-
 ## 🧪 Test Types
 
 ### Unit Tests
@@ -82,61 +80,23 @@ Integration tests verify interactions between multiple contracts or complex work
 
 ```rust
 #[test]
-fn test_token_transfer_to_vault() {
+fn test_multi_contract_interaction() {
     let env = Env::default();
-    env.mock_all_auths();
 
-    // Deploy contracts
-    let token_id = env.register_contract(None, Token);
-    let vault_id = env.register_contract(None, Vault);
+    // Deploy multiple contracts
+    let token_id = env.register_contract(None, TokenContract);
+    let vault_id = env.register_contract(None, VaultContract);
 
     let token = TokenContractClient::new(&env, &token_id);
     let vault = VaultContractClient::new(&env, &vault_id);
 
-    let user = Address::generate(&env);
-
-    // Mint tokens
+    // Test interaction
     token.mint(&user, &1000);
-    assert_eq!(token.balance(&user), 1000);
-
-    // Deposit to vault
     vault.deposit(&user, &token_id, &500);
+
     assert_eq!(vault.balance(&user), 500);
-    assert_eq!(token.balance(&user), 500);
 }
 ```
-
-### Snapshot Testing
-
-Snapshot tests capture the output of a function and compare it against a stored snapshot. Useful for testing complex data structures or serialization.
-
-**When to use**:
-
-- Testing complex data structures
-- Verifying serialization/deserialization
-- Regression testing for output changes
-- Testing event emissions
-
-**Example**:
-
-```rust
-#[test]
-fn test_contract_state_snapshot() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, MyContract);
-    let client = MyContractClient::new(&env, &contract_id);
-
-    // Perform operations
-    client.initialize(&Address::generate(&env), &1000);
-
-    // Verify state matches expected snapshot
-    let state = client.get_state();
-    assert_eq!(state.balance, 1000);
-    assert_eq!(state.initialized, true);
-}
-```
-
----
 
 ## 🏗️ Test Organization
 
@@ -185,123 +145,84 @@ use super::*;
 use soroban_sdk::Env;
 
 #[test]
-fn test_add_positive_numbers() {
+fn test_add() {
     let env = Env::default();
-    env.mock_all_auths();
-
     let contract_id = env.register_contract(None, MyContract);
     let client = MyContractClient::new(&env, &contract_id);
 
-    assert_eq!(client.add(&5, &3), 8);
+    assert_eq!(client.add(&2, &3), 5);
 }
 ```
 
----
-
-## 🛠️ Test Utilities
+## 🛠️ Testing Utilities
 
 ### Environment Setup
 
-Every test needs an `Env` instance. Use `Env::default()` for most cases.
-
 ```rust
-let env = Env::default();
-```
+use soroban_sdk::{Env, Address, testutils::Address as _};
 
-### Authorization Mocking
-
-Use `env.mock_all_auths()` to bypass authorization checks during testing. This keeps tests focused on business logic.
-
-```rust
 #[test]
-fn test_transfer_with_auth() {
+fn setup_test() {
     let env = Env::default();
-    env.mock_all_auths();  // Mock all auth checks
 
-    let contract_id = env.register_contract(None, Token);
-    let client = TokenContractClient::new(&env, &contract_id);
+    // Mock the ledger to enable authorization
+    env.mock_all_auths();
 
-    let from = Address::generate(&env);
-    let to = Address::generate(&env);
+    // Create test addresses
+    let admin = Address::generate(&env);
+    let user = Address::generate(&env);
 
-    client.transfer(&from, &to, &100);
-    assert_eq!(client.balance(&to), 100);
+    // ... test logic
 }
 ```
 
 ### Time Manipulation
 
-Advance ledger time for testing time-dependent logic.
-
 ```rust
 #[test]
-fn test_timelock_expires() {
+fn test_with_time() {
     let env = Env::default();
-    env.mock_all_auths();
 
-    let contract_id = env.register_contract(None, Timelock);
-    let client = TimelockClient::new(&env, &contract_id);
-
-    // Lock funds for 100 ledgers
-    client.lock(&100);
-
-    // Advance time
+    // Set specific ledger timestamp
     env.ledger().with_mut(|li| {
-        li.sequence_number = 150;
+        li.timestamp = 1640000000;
     });
 
-    // Verify lock has expired
-    assert!(client.can_unlock());
+    // Advance time by 100 seconds
+    env.ledger().with_mut(|li| {
+        li.timestamp += 100;
+    });
 }
 ```
 
-### Storage Testing
-
-Test storage operations directly.
+### Authorization Mocking
 
 ```rust
+use soroban_sdk::testutils::MockAuth;
+
 #[test]
-fn test_persistent_storage() {
+fn test_auth() {
     let env = Env::default();
+    env.mock_all_auths(); // Mock all authorization checks
 
-    let key = symbol_short!("balance");
-    let value: u64 = 1000;
+    let contract_id = env.register_contract(None, MyContract);
+    let client = MyContractClient::new(&env, &contract_id);
 
-    // Write to persistent storage
-    env.storage().persistent().set(&key, &value);
-    env.storage().persistent().extend_ttl(&key, 100, 100);
+    let user = Address::generate(&env);
 
-    // Read from persistent storage
-    let retrieved: u64 = env.storage().persistent().get(&key).unwrap();
-    assert_eq!(retrieved, value);
+    // This will succeed even without real auth
+    client.transfer(&user, &recipient, &100);
+
+    // Verify auth was called
+    assert_eq!(
+        env.auths(),
+        std::vec![(
+            user.clone(),
+            AuthorizedInvocation { ... }
+        )]
+    );
 }
 ```
-
-### Event Testing
-
-Verify that events are emitted correctly.
-
-```rust
-#[test]
-fn test_transfer_emits_event() {
-    let env = Env::default();
-    env.mock_all_auths();
-
-    let contract_id = env.register_contract(None, Token);
-    let client = TokenContractClient::new(&env, &contract_id);
-
-    let from = Address::generate(&env);
-    let to = Address::generate(&env);
-
-    client.transfer(&from, &to, &100);
-
-    // Verify event was emitted
-    let events = env.events().all();
-    assert!(!events.is_empty());
-}
-```
-
----
 
 ## ✅ Best Practices
 
@@ -313,26 +234,26 @@ Test names should clearly describe what is being tested and the expected outcome
 
 ```rust
 #[test]
-fn test_hello_returns_greeting_vec() {}
+fn test_transfer_succeeds_with_sufficient_balance() { }
 
 #[test]
-fn test_hello_with_different_names() {}
+fn test_transfer_fails_with_insufficient_balance() { }
 
 #[test]
-fn test_hello_with_single_character_name() {}
+fn test_transfer_fails_when_sender_not_authorized() { }
 ```
 
 ❌ **DON'T**:
 
 ```rust
 #[test]
-fn test_hello() {}
+fn test_transfer() { }
 
 #[test]
-fn test_1() {}
+fn test_1() { }
 
 #[test]
-fn test_error() {}
+fn test_error() { }
 ```
 
 ### 2. Test Both Happy Path and Error Cases
@@ -354,15 +275,6 @@ fn test_withdraw_fails_with_insufficient_balance() {
 }
 ```
 
-❌ **DON'T**:
-
-```rust
-#[test]
-fn test_withdraw() {
-    // Only test the happy path
-}
-```
-
 ### 3. Use Assertions with Descriptive Messages
 
 Include context in assertion messages to aid debugging.
@@ -377,12 +289,6 @@ assert_eq!(
     expected_balance,
     balance
 );
-```
-
-❌ **DON'T**:
-
-```rust
-assert_eq!(balance, expected_balance);
 ```
 
 ### 4. Keep Tests Focused and Independent
@@ -415,23 +321,6 @@ fn test_persistent_storage() {
 }
 ```
 
-❌ **DON'T**:
-
-```rust
-#[test]
-fn test_counter_operations() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, Counter);
-    let client = CounterClient::new(&env, &contract_id);
-
-    // Multiple behaviors in one test
-    client.increment();
-    client.increment();
-    client.decrement();
-    assert_eq!(client.value(), 1);
-}
-```
-
 ### 5. Mock Authorization Appropriately
 
 Use `env.mock_all_auths()` for unit tests, but test authorization logic explicitly when needed.
@@ -445,7 +334,7 @@ fn test_transfer_logic_with_mocked_auth() {
     env.mock_all_auths();  // Focus on transfer logic
 
     let contract_id = env.register_contract(None, Token);
-    let client = TokenContractClient::new(&env, &contract_id);
+    let client = TokenClient::new(&env, &contract_id);
 
     // Test transfer logic
 }
@@ -523,120 +412,81 @@ fn test_transfer() {
 }
 ```
 
----
+### 8. Test Storage Behavior
 
-## 🧩 Test Utilities Library
-
-### Creating Reusable Test Helpers
-
-For projects with multiple contracts or complex test setups, create a shared test utilities module.
-
-**File: `tests/common/mod.rs`**:
+Example from Storage Patterns Contract:
 
 ```rust
+#[test]
+fn test_persistent_storage() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, StorageContract);
+    let client = StorageContractClient::new(&env, &contract_id);
+
+    let key = symbol_short!("balance");
+    let value = 1000u64;
+
+    // Initially, key should not exist
+    assert!(!client.has_persistent(&key));
+
+    // Set value
+    client.set_persistent(&key, &value);
+
+    // Verify set event
+    let events = env.events().all();
+    let (_, topics, data) = events.last().unwrap();
+    assert_eq!(topics.len(), 2);
+    let t0: Symbol = Symbol::try_from_val(&env, &topics.get(0).unwrap()).unwrap();
+    let t1: Symbol = Symbol::try_from_val(&env, &topics.get(1).unwrap()).unwrap();
+    assert_eq!(t0, symbol_short!("persist"));
+    assert_eq!(t1, symbol_short!("set"));
+    let (d_key, d_value): (Symbol, u64) = <(Symbol, u64)>::try_from_val(&env, &data).unwrap();
+    assert_eq!(d_key, key);
+    assert_eq!(d_value, value);
+
+    // Key should now exist
+    assert!(client.has_persistent(&key));
+
+    // Retrieved value should match
+    assert_eq!(client.get_persistent(&key), Some(value));
+
+    // Remove value
+    client.remove_persistent(&key);
+
+    // Verify remove event
+    let events = env.events().all();
+    let (_, topics, data) = events.last().unwrap();
+    assert_eq!(topics.len(), 2);
+    let t0: Symbol = Symbol::try_from_val(&env, &topics.get(0).unwrap()).unwrap();
+    let t1: Symbol = Symbol::try_from_val(&env, &topics.get(1).unwrap()).unwrap();
+    assert_eq!(t0, symbol_short!("persist"));
+    assert_eq!(t1, symbol_short!("set")); // or "remove" depending on event
+    // ... assertions
+}
+```
+
+## 🧩 Shared Test Utilities
+
+For multi-file test suites, keep reusable setup code in `tests/common/mod.rs`.
+
+```rust
+// tests/common/mod.rs
 use soroban_sdk::{Address, Env, testutils::Address as _};
 
-/// Standard test environment setup with auth mocking
 pub fn setup_env() -> Env {
     let env = Env::default();
     env.mock_all_auths();
     env
 }
 
-/// Generate a test address
 pub fn test_user(env: &Env) -> Address {
     Address::generate(env)
 }
-
-/// Setup multiple test users
-pub fn test_users(env: &Env, count: usize) -> Vec<Address> {
-    (0..count).map(|_| Address::generate(env)).collect()
-}
-
-/// Advance ledger time by N seconds
-pub fn advance_time(env: &Env, seconds: u64) {
-    env.ledger().with_mut(|li| {
-        li.timestamp += seconds;
-    });
-}
-
-/// Set ledger to specific timestamp
-pub fn set_time(env: &Env, timestamp: u64) {
-    env.ledger().with_mut(|li| {
-        li.timestamp = timestamp;
-    });
-}
 ```
-
-**Usage in tests**:
-
-```rust
-mod common;
-
-#[test]
-fn test_with_utilities() {
-    let env = common::setup_env();
-    let users = common::test_users(&env, 3);
-
-    common::advance_time(&env, 100);
-
-    // Test logic here
-}
-```
-
-### Common Test Fixtures
-
-Create fixtures for frequently-used contract setups:
-
-```rust
-pub struct TestFixture {
-    pub env: Env,
-    pub admin: Address,
-    pub user: Address,
-    pub contract_id: Address,
-}
-
-impl TestFixture {
-    pub fn new<T: soroban_sdk::contract::ContractType>() -> Self {
-        let env = setup_env();
-        let admin = test_user(&env);
-        let user = test_user(&env);
-
-        let contract_id = env.register_contract(None, T);
-
-        TestFixture {
-            env,
-            admin,
-            user,
-            contract_id,
-        }
-    }
-}
-
-#[test]
-fn test_with_fixture() {
-    let fixture = TestFixture::new::<MyContract>();
-
-    // Use fixture.env, fixture.admin, fixture.user, fixture.contract_id
-}
-```
-
----
 
 ## 📸 Snapshot Testing
 
 Snapshot testing helps lock down serialized outputs, event topics/data, and human-readable responses.
-
-**Installation**:
-
-Add to `Cargo.toml`:
-
-```toml
-[dev-dependencies]
-insta = "1"
-```
-
-**Example**:
 
 ```rust
 #[test]
@@ -650,7 +500,7 @@ fn emits_expected_event_shape() {
     let events = env.events().all();
     assert_eq!(events.len(), 1);
 
-    // Keep snapshots stable by comparing deterministic debug output
+    // Keep snapshots stable by comparing deterministic debug output.
     let rendered = format!("{events:?}");
     insta::assert_snapshot!(rendered);
 }
@@ -661,161 +511,13 @@ fn emits_expected_event_shape() {
 - Testing complex data structures
 - Verifying serialization/deserialization
 - Regression testing for output changes
-- Testing event emissions with complex payloads
-
-**Tips**:
-
-- Prefer deterministic inputs (fixed timestamps/amounts) before snapshot assertions
-- Snapshot only stable values (avoid non-deterministic IDs unless normalized first)
-- Review snapshot diffs in PRs the same way you review code diffs
-- Use `insta review` to approve snapshot changes
-
----
-
-## 🧪 Integration Testing Patterns
-
-### Multi-Contract Testing
-
-```rust
-#[test]
-fn test_token_vault_integration() {
-    let env = Env::default();
-    env.mock_all_auths();
-
-    // Deploy both contracts
-    let token_id = env.register_contract(None, TokenContract);
-    let vault_id = env.register_contract(None, VaultContract);
-
-    let token = TokenContractClient::new(&env, &token_id);
-    let vault = VaultContractClient::new(&env, &vault_id);
-
-    let user = Address::generate(&env);
-
-    // Test interaction flow
-    token.mint(&user, &1000);
-    assert_eq!(token.balance(&user), 1000);
-
-    vault.deposit(&user, &token_id, &500);
-    assert_eq!(vault.balance(&user), 500);
-    assert_eq!(token.balance(&user), 500);
-}
-```
-
-### Cross-Contract Calls
-
-```rust
-#[test]
-fn test_cross_contract_authorization() {
-    let env = Env::default();
-    env.mock_all_auths();
-
-    let contract_a_id = env.register_contract(None, ContractA);
-    let contract_b_id = env.register_contract(None, ContractB);
-
-    let contract_a = ContractAClient::new(&env, &contract_a_id);
-    let contract_b = ContractBClient::new(&env, &contract_b_id);
-
-    let user = Address::generate(&env);
-
-    // Contract A calls Contract B
-    contract_a.invoke_contract_b(&contract_b_id, &user, &100);
-
-    // Verify state in both contracts
-    assert_eq!(contract_a.get_state(&user), 100);
-    assert_eq!(contract_b.get_state(&user), 100);
-}
-```
-
----
-
-## 🔍 Advanced Testing Techniques
-
-### Property-Based Testing
-
-For complex logic, consider property-based testing with `proptest`:
-
-```toml
-[dev-dependencies]
-proptest = "1"
-```
-
-```rust
-use proptest::prelude::*;
-
-proptest! {
-    #[test]
-    fn test_transfer_preserves_total_supply(
-        initial_balance in 0u64..1_000_000,
-        transfer_amount in 0u64..1_000_000,
-    ) {
-        let env = Env::default();
-        env.mock_all_auths();
-
-        let contract_id = env.register_contract(None, Token);
-        let client = TokenContractClient::new(&env, &contract_id);
-
-        let user1 = Address::generate(&env);
-        let user2 = Address::generate(&env);
-
-        client.mint(&user1, &initial_balance);
-        let total_before = client.total_supply();
-
-        if transfer_amount <= initial_balance {
-            client.transfer(&user1, &user2, &transfer_amount);
-            let total_after = client.total_supply();
-
-            prop_assert_eq!(total_before, total_after, "Total supply should be preserved");
-        }
-    }
-}
-```
-
-### Fuzzing
-
-For security-critical contracts, use fuzzing to find edge cases:
-
-```bash
-cargo install cargo-fuzz
-cargo fuzz init
-cargo fuzz add fuzz_target_1
-```
-
-### Benchmarking
-
-Measure contract performance:
-
-```rust
-#![feature(test)]
-extern crate test;
-
-use test::Bencher;
-
-#[bench]
-fn bench_transfer(b: &mut Bencher) {
-    let env = Env::default();
-    env.mock_all_auths();
-
-    let contract_id = env.register_contract(None, Token);
-    let client = TokenContractClient::new(&env, &contract_id);
-
-    let from = Address::generate(&env);
-    let to = Address::generate(&env);
-
-    client.mint(&from, &1_000_000);
-
-    b.iter(|| {
-        client.transfer(&from, &to, &100);
-    });
-}
-```
-
----
+- Testing event emissions
 
 ## 📊 Coverage Tools
 
-### Cargo Tarpaulin
+The repository CI already uses `cargo-tarpaulin` and uploads Cobertura XML to Codecov.
 
-Measure code coverage for your contracts.
+### Cargo Tarpaulin
 
 **Installation**:
 
@@ -826,338 +528,7 @@ cargo install cargo-tarpaulin --locked
 **Usage**:
 
 ```bash
-# Generate HTML coverage report
-cargo tarpaulin --workspace --all-features --out Html --output-dir ./coverage --timeout 300
-
-# Generate Cobertura XML for CI/CD
-cargo tarpaulin --workspace --all-features --out Xml --output-dir ./coverage --timeout 300
-
-# Exclude specific files
-cargo tarpaulin --exclude-files tests/* --workspace
+cargo tarpaulin --out Xml --out Html
 ```
 
-### LLVM-based Coverage
-
-```bash
-cargo install cargo-llvm-cov --locked
-cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
-```
-
-### Coverage Goals
-
-- **Minimum**: >80% line coverage
-- **Target**: >90% line coverage
-- **Ideal**: >95% line coverage
-
-Focus on covering critical paths and error conditions, not just achieving high percentages.
-
-Use coverage reports to identify untested error paths, auth branches, and storage edge cases.
-
----
-
-## 🧩 Test Utilities
-
-### Testing Authorization
-
-```rust
-#[test]
-fn test_only_admin_can_initialize() {
-    let env = Env::default();
-
-    let admin = Address::generate(&env);
-    let non_admin = Address::generate(&env);
-
-    let contract_id = env.register_contract(None, MyContract);
-    let client = MyContractClient::new(&env, &contract_id);
-
-    // Admin can initialize
-    env.mock_auths(&[MockAuth {
-        address: admin.clone(),
-        nonce: 0,
-        sign_args: vec![&env],
-    }]);
-    client.initialize(&admin);
-
-    // Non-admin cannot initialize
-    env.mock_auths(&[MockAuth {
-        address: non_admin.clone(),
-        nonce: 0,
-        sign_args: vec![&env],
-    }]);
-
-    // This should panic or return error
-    // client.initialize(&non_admin);
-}
-```
-
-### Testing State Transitions
-
-```rust
-#[test]
-fn test_contract_state_transitions() {
-    let env = Env::default();
-    env.mock_all_auths();
-
-    let contract_id = env.register_contract(None, StateMachine);
-    let client = StateMachineClient::new(&env, &contract_id);
-
-    // Initial state
-    assert_eq!(client.state(), State::Idle);
-
-    // Transition to Active
-    client.activate();
-    assert_eq!(client.state(), State::Active);
-
-    // Transition to Completed
-    client.complete();
-    assert_eq!(client.state(), State::Completed);
-}
-```
-
-### Testing Error Conditions
-
-```rust
-#[test]
-#[should_panic(expected = "insufficient balance")]
-fn test_withdraw_insufficient_balance() {
-    let env = Env::default();
-    env.mock_all_auths();
-
-    let contract_id = env.register_contract(None, Vault);
-    let client = VaultClient::new(&env, &contract_id);
-
-    let user = Address::generate(&env);
-
-    // Deposit 100
-    client.deposit(&user, &100);
-
-    // Try to withdraw 200 (should panic)
-    client.withdraw(&user, &200);
-}
-```
-
-### Testing Storage Persistence
-
-```rust
-#[test]
-fn test_data_persists_across_calls() {
-    let env = Env::default();
-    env.mock_all_auths();
-
-    let contract_id = env.register_contract(None, Storage);
-    let client = StorageClient::new(&env, &contract_id);
-
-    // Set value
-    client.set_value(&42);
-
-    // Retrieve value in same test
-    assert_eq!(client.get_value(), 42);
-
-    // In real scenarios, persistence is verified across transactions
-}
-```
-
----
-
-## ⚠️ Common Testing Pitfalls
-
-### 1. Forgetting to Mock Authorization
-
-❌ **DON'T**:
-
-```rust
-#[test]
-fn test_transfer() {
-    let env = Env::default();
-    // Forgot env.mock_all_auths()!
-
-    let contract_id = env.register_contract(None, Token);
-    let client = TokenClient::new(&env, &contract_id);
-
-    // This will fail due to missing authorization
-    client.transfer(&from, &to, &100);
-}
-```
-
-✅ **DO**:
-
-```rust
-#[test]
-fn test_transfer() {
-    let env = Env::default();
-    env.mock_all_auths();  // Always mock auth for unit tests
-
-    let contract_id = env.register_contract(None, Token);
-    let client = TokenClient::new(&env, &contract_id);
-
-    client.transfer(&from, &to, &100);
-}
-```
-
-### 2. Not Extending TTL for Persistent Storage
-
-❌ **DON'T**:
-
-```rust
-#[test]
-fn test_persistent_storage() {
-    let env = Env::default();
-
-    let key = symbol_short!("balance");
-    env.storage().persistent().set(&key, &1000);
-    // Forgot to extend TTL!
-
-    let value: u64 = env.storage().persistent().get(&key).unwrap();
-    assert_eq!(value, 1000);
-}
-```
-
-✅ **DO**:
-
-```rust
-#[test]
-fn test_persistent_storage() {
-    let env = Env::default();
-
-    let key = symbol_short!("balance");
-    env.storage().persistent().set(&key, &1000);
-    env.storage().persistent().extend_ttl(&key, 100, 100);  // Extend TTL
-
-    let value: u64 = env.storage().persistent().get(&key).unwrap();
-    assert_eq!(value, 1000);
-}
-```
-
-### 3. Testing Multiple Behaviors in One Test
-
-❌ **DON'T**:
-
-```rust
-#[test]
-fn test_everything() {
-    // Tests initialization, transfer, and withdrawal in one test
-    // Hard to debug when it fails
-}
-```
-
-✅ **DO**:
-
-```rust
-#[test]
-fn test_initialization() {}
-
-#[test]
-fn test_transfer() {}
-
-#[test]
-fn test_withdrawal() {}
-```
-
-### 4. Ignoring Error Cases
-
-❌ **DON'T**:
-
-```rust
-#[test]
-fn test_transfer() {
-    // Only test the happy path
-    client.transfer(&from, &to, &100);
-    assert_eq!(client.balance(&to), 100);
-}
-```
-
-✅ **DO**:
-
-```rust
-#[test]
-fn test_transfer_succeeds() {
-    client.transfer(&from, &to, &100);
-    assert_eq!(client.balance(&to), 100);
-}
-
-#[test]
-#[should_panic]
-fn test_transfer_fails_with_insufficient_balance() {
-    client.transfer(&from, &to, &1000000);
-}
-```
-
----
-
-## 🚀 Running Tests
-
-### Run All Tests
-
-```bash
-# From repository root
-cargo test --workspace
-
-# From specific example
-cargo test -p hello-world
-```
-
-### Run Specific Test
-
-```bash
-# Run single test
-cargo test test_hello_returns_greeting_vec
-
-# Run tests matching pattern
-cargo test test_hello_
-```
-
-### Run with Output
-
-```bash
-# Show println! output
-cargo test -- --nocapture
-
-# Show test names as they run
-cargo test -- --nocapture --test-threads=1
-```
-
-### Generate Coverage Report
-
-```bash
-# HTML report
-cargo tarpaulin --workspace --out Html --output-dir coverage
-
-# Open in browser
-open coverage/index.html
-```
-
----
-
-## ✅ Testing Validation Checklist
-
-Before submitting a PR with new tests, verify:
-
-- [ ] All tests have descriptive names following `test_<function>_<scenario>` pattern
-- [ ] Both happy path and error cases are tested
-- [ ] Edge cases are covered (zero, max values, self-operations)
-- [ ] Authorization is tested appropriately (mocked for unit tests, explicit for auth tests)
-- [ ] Storage operations include TTL extensions
-- [ ] Events are verified when emitted
-- [ ] Test coverage is >90% for new code
-- [ ] All tests pass locally: `cargo test --workspace`
-- [ ] No Clippy warnings: `cargo clippy --all-targets --all-features -- -D warnings`
-- [ ] Code is formatted: `cargo fmt --all`
-- [ ] Tests are independent and don't rely on execution order
-- [ ] Assertions include descriptive messages
-- [ ] No hardcoded values that should be constants
-- [ ] Test utilities are reused where applicable
-
----
-
-## 📚 Additional Resources
-
-- [Soroban SDK Documentation](https://docs.rs/soroban-sdk/)
-- [Rust Testing Guide](https://doc.rust-lang.org/book/ch11-00-testing.html)
-- [Cargo Tarpaulin](https://github.com/xd009642/tarpaulin)
-- [Best Practices](./best-practices.md)
-- [Style Guide](./style-guide.md)
-- [Soroban Testing Docs](https://developers.stellar.org/docs/smart-contracts/testing)
-
----
-
-**Last Updated**: April 2025
+Reports are written to `coverage/`. Open `coverage/tarpaulin-report.html` in a browser for a line-by-line view of what your tests are (and aren't) hitting.

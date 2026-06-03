@@ -4,7 +4,9 @@
 
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Symbol};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Symbol,
+};
 
 #[contracttype]
 #[derive(Clone)]
@@ -46,7 +48,9 @@ impl MintBurnToken {
 
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::TotalSupply, &0i128);
-        env.storage().instance().set(&DataKey::SupplyCap, &supply_cap);
+        env.storage()
+            .instance()
+            .set(&DataKey::SupplyCap, &supply_cap);
 
         Ok(())
     }
@@ -69,8 +73,12 @@ impl MintBurnToken {
             .checked_add(amount)
             .ok_or(TokenError::Overflow)?;
 
-        env.storage().persistent().set(&DataKey::Balance(to.clone()), &new_balance);
-        env.storage().instance().set(&DataKey::TotalSupply, &new_supply);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Balance(to.clone()), &new_balance);
+        env.storage()
+            .instance()
+            .set(&DataKey::TotalSupply, &new_supply);
         env.events().publish((EVENT_MINT, to.clone()), amount);
         Ok(new_balance)
     }
@@ -88,8 +96,12 @@ impl MintBurnToken {
         let new_balance = current_balance - amount;
         let new_supply = total_supply - amount;
 
-        env.storage().persistent().set(&DataKey::Balance(from.clone()), &new_balance);
-        env.storage().instance().set(&DataKey::TotalSupply, &new_supply);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Balance(from.clone()), &new_balance);
+        env.storage()
+            .instance()
+            .set(&DataKey::TotalSupply, &new_supply);
         env.events().publish((EVENT_BURN, from.clone()), amount);
         Ok(new_balance)
     }
@@ -136,11 +148,18 @@ fn read_admin(env: &Env) -> Result<Address, TokenError> {
 }
 
 fn read_total_supply(env: &Env) -> i128 {
-    env.storage().instance().get(&DataKey::TotalSupply).unwrap_or(0)
+    env.storage()
+        .instance()
+        .get(&DataKey::TotalSupply)
+        .unwrap_or(0)
 }
 
 fn read_supply_cap(env: &Env) -> Result<i128, TokenError> {
-    Ok(env.storage().instance().get(&DataKey::SupplyCap).unwrap_or(0))
+    Ok(env
+        .storage()
+        .instance()
+        .get(&DataKey::SupplyCap)
+        .unwrap_or(0))
 }
 
 fn read_balance(env: &Env, user: &Address) -> i128 {

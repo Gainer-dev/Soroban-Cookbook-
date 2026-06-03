@@ -1,54 +1,28 @@
 # Basic Examples
 
-This category contains beginner-friendly examples that introduce the core concepts of Soroban smart contract development, one at a time. Each example is designed to be minimal, focused, and easy to understand.
+Core Soroban fundamentals, one concept per example. Perfect for beginners starting their journey with Soroban smart contract development.
 
-## What's Inside?
+## 🎯 Learning Path
 
-- **Fundamental Concepts**: Learn about contract structure, storage types, authentication, custom errors, and event emission.
-- **Core Data Types**: Understand how to work with Soroban's built-in types like `Address`, `Symbol`, `Vec`, `Map`, and primitive types.
-- **Best Practices**: See simple, effective patterns for validation, error handling, and writing clean, testable code.
+Follow this recommended sequence to build your understanding progressively:
 
-## Planned Examples
+1. Start with [01-hello-world](./01-hello-world/) to understand contract structure and deployment.
+2. Learn storage patterns with [02-storage-patterns](./02-storage-patterns/) and its focused variants.
+3. Study authentication and authorization in [03-authentication](./03-authentication/).
+4. Add observability via events in [04-events] and [basic-event-emission].
+5. Learn execution context with [05-auth-context].
+6. Handle errors using [03-custom-errors] and [05-error-handling].
+7. Explore types and conversions in [06-soroban-types], [06-type-conversions], and [10-data-types].
 
 ## 📋 All Examples
 
-### Core Contract Structure
+Each example includes:
 
-#### [01-hello-world](./01-hello-world/) — 🟢 Beginner
-The simplest possible Soroban contract — a single `hello` function that returns a greeting vector.
-- **Concepts:** `#[contract]`, `#[contractimpl]`, `Env`, `Symbol`, `Vec`, `#![no_std]`
-- **Best for:** First contract, understanding the minimal contract skeleton
+- Complete source code with inline documentation
+- Comprehensive unit tests
+- A README with usage and build instructions
 
----
-
-### Storage
-
-#### [02-storage-patterns](./02-storage-patterns/) — 🟢 Beginner
-All three Soroban storage layers (persistent, instance, temporary) side-by-side with TTL management.
-- **Concepts:** `persistent`, `instance`, `temporary` storage; TTL extension; `DataKey` enums; storage isolation
-- **Best for:** Understanding when to use each storage tier
-
-#### [instance-storage](./instance-storage/) — 🟢 Beginner
-Focused deep dive into instance storage — the contract-wide, shared-TTL tier.
-- **Concepts:** Shared TTL, contract configuration, counters, `extend_ttl` on instance
-- **Best for:** Storing admin addresses, protocol config, aggregate counters
-
-#### [persistent-storage](./persistent-storage/) — 🟢 Beginner
-Focused deep dive into persistent storage — the highest-durability tier with per-key TTL.
-- **Concepts:** Per-key TTL, `extend_ttl` strategies, `DataKey` enum, `checked_add`
-- **Best for:** User balances, ownership records, permissions
-
-#### [temporary_storage](./temporary_storage/) — 🟢 Beginner
-Focused deep dive into temporary storage — the cheapest, ephemeral tier.
-- **Concepts:** Short-lived TTL, reentrancy guards, intra-transaction caching, gas cost trade-offs
-- **Best for:** Flags, intermediate computation results, short-lived caches
-
-#### [lazy-cache](./lazy-cache/) — 🟡 Intermediate
-Lazy loading and temporary caching for large persistent data sets.
-- **Concepts:** On-demand loading, bounded cache eviction, cache invalidation, hit/miss metrics
-- **Best for:** Reducing repeated persistent storage reads with a small working set
-
----
+## Getting Started
 
 ### Error Handling
 
@@ -62,7 +36,7 @@ Result-based error handling and propagation using `try_*` client methods.
 - **Concepts:** `#[contracterror]`, `Result<T, Error>`, `try_*` test methods, `LimitExceeded`
 - **Best for:** Learning the test-side error assertion pattern
 
----
+## Getting Started
 
 ### Authentication & Authorization
 
@@ -76,7 +50,9 @@ Understanding execution context and authorization across cross-contract call cha
 - **Concepts:** `env.current_contract_address()`, `env.auths()`, invoker vs. current contract, proxy patterns
 - **Best for:** Proxy contracts, factory patterns, inter-contract communication
 
----
+- Complete source code with inline documentation
+- Comprehensive unit tests
+- A README with usage and build instructions
 
 ### Events
 

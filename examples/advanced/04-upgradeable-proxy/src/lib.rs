@@ -6,7 +6,7 @@
 
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Symbol, vec};
+use soroban_sdk::{contract, contractimpl, symbol_short, vec, Address, Env, Symbol};
 
 const ADMIN_KEY: Symbol = symbol_short!("admin");
 const IMPLEMENTATION_KEY: Symbol = symbol_short!("impl");
@@ -30,7 +30,9 @@ impl ProxyContract {
         }
 
         env.storage().persistent().set(&ADMIN_KEY, &admin);
-        env.storage().persistent().set(&IMPLEMENTATION_KEY, &implementation);
+        env.storage()
+            .persistent()
+            .set(&IMPLEMENTATION_KEY, &implementation);
     }
 
     /// Upgrade to a new implementation contract.
@@ -78,12 +80,8 @@ impl ProxyContract {
     /// The sum of a and b
     pub fn add(env: Env, a: i128, b: i128) -> i128 {
         let implementation: Address = Self::get_implementation(&env);
-        
-        env.invoke_contract(
-            &implementation,
-            &symbol_short!("add"),
-            vec![&env, a, b],
-        )
+
+        env.invoke_contract(&implementation, &symbol_short!("add"), vec![&env, a, b])
     }
 
     /// Forward a call to the implementation contract's subtract function.
@@ -97,12 +95,8 @@ impl ProxyContract {
     /// The difference (a - b)
     pub fn subtract(env: Env, a: i128, b: i128) -> i128 {
         let implementation: Address = Self::get_implementation(&env);
-        
-        env.invoke_contract(
-            &implementation,
-            &symbol_short!("sub"),
-            vec![&env, a, b],
-        )
+
+        env.invoke_contract(&implementation, &symbol_short!("sub"), vec![&env, a, b])
     }
 }
 

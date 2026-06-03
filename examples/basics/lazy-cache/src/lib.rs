@@ -28,7 +28,9 @@ impl LazyCacheContract {
     /// Store a large item in persistent storage.
     /// The item is not cached until it is requested.
     pub fn set_item(env: Env, id: u32, value: u64) {
-        env.storage().persistent().set(&StorageKey::Item(id), &value);
+        env.storage()
+            .persistent()
+            .set(&StorageKey::Item(id), &value);
         env.events().publish(
             (symbol_short!("cache"), symbol_short!("store")),
             (id, value),
@@ -45,7 +47,8 @@ impl LazyCacheContract {
         if env.storage().temporary().has(&cache_key) {
             metadata.hits += 1;
             save_metadata(&env, &metadata);
-            env.events().publish((symbol_short!("cache"), symbol_short!("hit")), id);
+            env.events()
+                .publish((symbol_short!("cache"), symbol_short!("hit")), id);
             return env.storage().temporary().get(&cache_key);
         }
 
@@ -53,7 +56,8 @@ impl LazyCacheContract {
         if let Some(value) = env.storage().persistent().get(&StorageKey::Item(id)) {
             add_to_cache(&env, &mut metadata, id, value);
             save_metadata(&env, &metadata);
-            env.events().publish((symbol_short!("cache"), symbol_short!("miss")), id);
+            env.events()
+                .publish((symbol_short!("cache"), symbol_short!("miss")), id);
             return Some(value);
         }
 
@@ -67,7 +71,8 @@ impl LazyCacheContract {
         prune_expired_cache(&env, &mut metadata);
         remove_cached_entry(&env, &mut metadata, id);
         save_metadata(&env, &metadata);
-        env.events().publish((symbol_short!("cache"), symbol_short!("invalidate")), id);
+        env.events()
+            .publish((symbol_short!("cache"), symbol_short!("invalidate")), id);
     }
 
     /// Clear the entire temporary cache.
@@ -80,8 +85,10 @@ impl LazyCacheContract {
         }
         metadata.ids = Vec::new(&env);
         save_metadata(&env, &metadata);
-        env.events()
-            .publish((symbol_short!("cache"), symbol_short!("clear")), metadata.ids.len());
+        env.events().publish(
+            (symbol_short!("cache"), symbol_short!("clear")),
+            metadata.ids.len(),
+        );
     }
 
     /// Returns the current cache size and the recorded hit/miss counts.
@@ -106,7 +113,9 @@ fn load_metadata(env: &Env) -> CacheMetadata {
 }
 
 fn save_metadata(env: &Env, metadata: &CacheMetadata) {
-    env.storage().instance().set(&StorageKey::CacheMetadata, metadata);
+    env.storage()
+        .instance()
+        .set(&StorageKey::CacheMetadata, metadata);
 }
 
 fn prune_expired_cache(env: &Env, metadata: &mut CacheMetadata) {
@@ -127,13 +136,18 @@ fn add_to_cache(env: &Env, metadata: &mut CacheMetadata, id: u32, value: u64) {
                     .temporary()
                     .remove(&StorageKey::Cache(*evicted_id));
                 metadata.ids.remove(0);
-                env.events().publish((symbol_short!("cache"), symbol_short!("evict")), *evicted_id);
+                env.events().publish(
+                    (symbol_short!("cache"), symbol_short!("evict")),
+                    *evicted_id,
+                );
             }
         }
         metadata.ids.push_back(id);
     }
 
-    env.storage().temporary().set(&StorageKey::Cache(id), &value);
+    env.storage()
+        .temporary()
+        .set(&StorageKey::Cache(id), &value);
     env.storage()
         .temporary()
         .extend_ttl(&StorageKey::Cache(id), 2, 100);

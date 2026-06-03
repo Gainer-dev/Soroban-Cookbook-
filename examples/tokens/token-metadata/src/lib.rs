@@ -178,9 +178,7 @@ impl TokenMetadataContract {
         require_non_empty(&new_symbol)?;
 
         env.storage().instance().set(&DataKey::Name, &new_name);
-        env.storage()
-            .instance()
-            .set(&DataKey::Symbol, &new_symbol);
+        env.storage().instance().set(&DataKey::Symbol, &new_symbol);
         env.storage().instance().set(&DataKey::Uri, &new_uri);
 
         env.events().publish(

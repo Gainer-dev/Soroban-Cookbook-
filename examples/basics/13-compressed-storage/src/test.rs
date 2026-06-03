@@ -19,7 +19,10 @@ fn test_compression_round_trip() {
     let compressed_len = client.store_compressed(&key, &data);
 
     assert_eq!(raw_len, data.len());
-    assert!(compressed_len < raw_len, "compression should reduce size for repeated bytes");
+    assert!(
+        compressed_len < raw_len,
+        "compression should reduce size for repeated bytes"
+    );
 
     assert_eq!(client.get_raw(&key), Some(data.clone()));
     assert_eq!(client.get_decompressed(&key), Some(data.clone()));
@@ -39,7 +42,10 @@ fn test_compression_non_repeating_data() {
     let compressed_len = client.store_compressed(&key, &data);
 
     assert_eq!(raw_len, data.len());
-    assert!(compressed_len >= raw_len, "small unrelated bytes may not benefit from RLE compression");
+    assert!(
+        compressed_len >= raw_len,
+        "small unrelated bytes may not benefit from RLE compression"
+    );
     assert_eq!(client.compare_stored_sizes(&key), (raw_len, compressed_len));
 }
 

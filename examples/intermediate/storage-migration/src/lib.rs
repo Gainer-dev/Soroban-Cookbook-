@@ -58,7 +58,9 @@ impl StorageMigration {
         }
 
         env.storage().instance().set(&DataKey::Admin, &admin);
-        env.storage().instance().set(&DataKey::Version, &DEFAULT_VERSION);
+        env.storage()
+            .instance()
+            .set(&DataKey::Version, &DEFAULT_VERSION);
         env.storage()
             .instance()
             .set(&DataKey::UserList, &Vec::<Address>::new(&env));
@@ -144,14 +146,18 @@ impl StorageMigration {
             env.storage()
                 .persistent()
                 .set(&DataKey::Profile(user.clone()), &profile);
-            env.storage().persistent().remove(&DataKey::LegacyBalance(user.clone()));
+            env.storage()
+                .persistent()
+                .remove(&DataKey::LegacyBalance(user.clone()));
 
             processed += 1;
             next_index += 1;
         }
 
         if next_index >= total_entries {
-            env.storage().instance().set(&DataKey::Version, &target_version);
+            env.storage()
+                .instance()
+                .set(&DataKey::Version, &target_version);
             env.storage()
                 .instance()
                 .set(&DataKey::MigrationState, &MigrationState::None);

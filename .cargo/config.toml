@@ -9,5 +9,4 @@ rustflags = ["-C", "target-feature=-reference-types"]
 [build]
 # Default build target for WASM contract compilation.
 # Override per-invocation with --target if needed (e.g. for host-native tests).
-target = "wasm32-unknown-unknown"
 target = "wasm32v1-none"

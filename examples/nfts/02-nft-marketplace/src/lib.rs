@@ -1,6 +1,8 @@
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Vec};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Vec,
+};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -61,14 +63,20 @@ pub enum MarketplaceError {
     Unauthorized = 3,
     InvalidPrice = 4,
     ListingNotFound = 5,
-        TradeNotFound = 6,
-        IncorrectListingType = 7,
-        AlreadySold = 8,
-        AuctionNotActive = 9,
-        BidTooLow = 10,
-        NoBids = 11,
-        ListingExpired = 12,
-        InvalidRoyalty = 13,
+    TradeNotFound = 6,
+    IncorrectListingType = 7,
+    AlreadySold = 8,
+    AuctionNotActive = 9,
+    BidTooLow = 10,
+    NoBids = 11,
+    ListingExpired = 12,
+    InvalidRoyalty = 13,
+}
+
+#[contract]
+pub struct NftMarketplaceContract;
+
+#[contractimpl]
 impl NftMarketplaceContract {
     pub fn initialize(env: Env, admin: Address) -> Result<(), MarketplaceError> {
         if env.storage().instance().has(&DataKey::Admin) {
@@ -78,7 +86,10 @@ impl NftMarketplaceContract {
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::ListingCount, &0u32);
         env.storage().instance().set(&DataKey::TradeCount, &0u32);
-        env.events().publish((symbol_short!("init"), symbol_short!("marketplace")), (admin,));
+        env.events().publish(
+            (symbol_short!("init"), symbol_short!("marketplace")),
+            (admin,),
+        );
         Ok(())
     }
 
@@ -98,7 +109,11 @@ impl NftMarketplaceContract {
             return Err(MarketplaceError::InvalidRoyalty);
         }
 
-        let listing_id = env.storage().instance().get(&DataKey::ListingCount).unwrap_or(0);
+        let listing_id = env
+            .storage()
+            .instance()
+            .get(&DataKey::ListingCount)
+            .unwrap_or(0);
         let listing = Listing {
             seller: seller.clone(),
             items: items.clone(),
@@ -111,8 +126,12 @@ impl NftMarketplaceContract {
             sold: false,
         };
 
-        env.storage().persistent().set(&DataKey::Listing(listing_id), &listing);
-        env.storage().instance().set(&DataKey::ListingCount, &(listing_id + 1));
+        env.storage()
+            .persistent()
+            .set(&DataKey::Listing(listing_id), &listing);
+        env.storage()
+            .instance()
+            .set(&DataKey::ListingCount, &(listing_id + 1));
         env.events().publish(
             (symbol_short!("listing"), symbol_short!("fixed_price")),
             (seller, listing_id, price, royalty_recipient, royalty_bps),
@@ -139,7 +158,11 @@ impl NftMarketplaceContract {
 
         let start_ledger = env.ledger().sequence();
         let end_ledger = start_ledger + duration;
-        let listing_id = env.storage().instance().get(&DataKey::ListingCount).unwrap_or(0);
+        let listing_id = env
+            .storage()
+            .instance()
+            .get(&DataKey::ListingCount)
+            .unwrap_or(0);
 
         let listing = Listing {
             seller: seller.clone(),
@@ -153,11 +176,22 @@ impl NftMarketplaceContract {
             sold: false,
         };
 
-        env.storage().persistent().set(&DataKey::Listing(listing_id), &listing);
-        env.storage().instance().set(&DataKey::ListingCount, &(listing_id + 1));
+        env.storage()
+            .persistent()
+            .set(&DataKey::Listing(listing_id), &listing);
+        env.storage()
+            .instance()
+            .set(&DataKey::ListingCount, &(listing_id + 1));
         env.events().publish(
             (symbol_short!("listing"), symbol_short!("auction")),
-            (seller, listing_id, reserve_price, end_ledger, royalty_recipient, royalty_bps),
+            (
+                seller,
+                listing_id,
+                reserve_price,
+                end_ledger,
+                royalty_recipient,
+                royalty_bps,
+            ),
         );
         Ok(listing_id)
     }
@@ -187,7 +221,10 @@ impl NftMarketplaceContract {
             return Err(MarketplaceError::ListingExpired);
         }
 
-        let current_bid: Option<Bid> = env.storage().persistent().get(&DataKey::HighestBid(listing_id));
+        let current_bid: Option<Bid> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::HighestBid(listing_id));
         let minimum = match current_bid.clone() {
             Some(bid) => bid.amount + 1,
             None => listing.reserve_price,
@@ -201,7 +238,9 @@ impl NftMarketplaceContract {
             bidder: bidder.clone(),
             amount: bid_amount,
         };
-        env.storage().persistent().set(&DataKey::HighestBid(listing_id), &bid);
+        env.storage()
+            .persistent()
+            .set(&DataKey::HighestBid(listing_id), &bid);
         env.events().publish(
             (symbol_short!("bid"), symbol_short!("auction")),
             (bidder, listing_id, bid_amount),
@@ -263,7 +302,13 @@ impl NftMarketplaceContract {
             .get(&DataKey::HighestBid(listing_id))
             .ok_or(MarketplaceError::NoBids)?;
 
-        Self::settle_sale(&env, &listing, highest_bid.bidder, highest_bid.amount, listing_id)
+        Self::settle_sale(
+            &env,
+            &listing,
+            highest_bid.bidder,
+            highest_bid.amount,
+            listing_id,
+        )
     }
 
     pub fn get_listing(env: Env, listing_id: u32) -> Result<Listing, MarketplaceError> {
@@ -281,7 +326,10 @@ impl NftMarketplaceContract {
     }
 
     pub fn trade_count(env: Env) -> u32 {
-        env.storage().instance().get(&DataKey::TradeCount).unwrap_or(0)
+        env.storage()
+            .instance()
+            .get(&DataKey::TradeCount)
+            .unwrap_or(0)
     }
 
     fn settle_sale(
@@ -301,9 +349,17 @@ impl NftMarketplaceContract {
             ledger: env.ledger().sequence(),
         };
 
-        let trade_id = env.storage().instance().get(&DataKey::TradeCount).unwrap_or(0);
-        env.storage().persistent().set(&DataKey::Trade(trade_id), &trade);
-        env.storage().instance().set(&DataKey::TradeCount, &(trade_id + 1));
+        let trade_id = env
+            .storage()
+            .instance()
+            .get(&DataKey::TradeCount)
+            .unwrap_or(0);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Trade(trade_id), &trade);
+        env.storage()
+            .instance()
+            .set(&DataKey::TradeCount, &(trade_id + 1));
 
         let mut completed_listing = listing.clone();
         completed_listing.sold = true;

@@ -1,4 +1,4 @@
-# Advanced Examples.
+# Advanced Examples
 
 This category contains examples of complex systems and advanced architectural patterns for experienced Soroban developers. These examples tackle sophisticated problems and often involve multi-contract interactions and intricate state management.
 

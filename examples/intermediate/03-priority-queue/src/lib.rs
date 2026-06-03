@@ -96,10 +96,13 @@ impl PriorityQueueContract {
             let right = 2 * index + 2;
             let mut largest = index;
 
-            if left < len && heap.get(left).unwrap().priority > heap.get(largest).unwrap().priority {
+            if left < len && heap.get(left).unwrap().priority > heap.get(largest).unwrap().priority
+            {
                 largest = left;
             }
-            if right < len && heap.get(right).unwrap().priority > heap.get(largest).unwrap().priority {
+            if right < len
+                && heap.get(right).unwrap().priority > heap.get(largest).unwrap().priority
+            {
                 largest = right;
             }
             if largest == index {

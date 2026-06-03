@@ -1,4 +1,7 @@
 //! Test suite for the Type Conversions contract.
+//!
+//! Tests use the generated contract client so the full host dispatch path is
+//! exercised, matching the pattern used across the rest of the cookbook.
 
 #![cfg(test)]
 use super::*;
@@ -7,9 +10,9 @@ use soroban_sdk::{
     Vec,
 };
 
-fn setup(env: &Env) -> TypeConversionsContractClient {
-    let id = env.register_contract(None, TypeConversionsContract);
-    TypeConversionsContractClient::new(env, &id)
+fn setup(env: &Env) -> ConversionContractClient {
+    let id = env.register_contract(None, ConversionContract);
+    ConversionContractClient::new(env, &id)
 }
 
 // ── convert_numbers ───────────────────────────────────────────────────────────
@@ -43,7 +46,6 @@ fn test_convert_numbers_unsupported_type() {
     let result = setup(&env).try_convert_numbers(&42i128, &99u32);
     assert!(result.is_err());
 }
-
 // ── convert_strings ───────────────────────────────────────────────────────────
 
 #[test]
@@ -140,6 +142,9 @@ fn test_safe_conversions_type_mismatch() {
     assert!(!success);
     assert_eq!(result, -1);
 }
+// ── create_user_data ──────────────────────────────────────────────────────────
+
+// ── create_user_data ──────────────────────────────────────────────────────────
 
 // ── create_user_data ─────────────────────────────────────────────────────────
 
@@ -336,8 +341,6 @@ fn test_val_roundtrip() {
     let result = setup(&env).val_roundtrip(&original);
     assert_eq!(result, original);
 }
-
-// ── integration ──────────────────────────────────────────────────────────────
 
 #[test]
 fn test_val_conversion_roundtrip_via_safe_conversions() {

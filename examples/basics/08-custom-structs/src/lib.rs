@@ -411,7 +411,7 @@ impl CustomStructsContract {
         // Store the profile
         env.storage()
             .instance()
-            .set(&(symbol_short!("profile"), address.clone()), &profile);
+            .set(&(symbol_short!("profile"), address), &profile);
 
         Ok(profile)
     }
@@ -454,7 +454,7 @@ impl CustomStructsContract {
         // Store updated profile
         env.storage()
             .instance()
-            .set(&(symbol_short!("profile"), address.clone()), &profile);
+            .set(&(symbol_short!("profile"), address), &profile);
 
         Ok(profile)
     }
@@ -468,8 +468,9 @@ impl CustomStructsContract {
         portfolio_type: PortfolioType,
     ) -> Result<Portfolio, ContractError> {
         let portfolio = Portfolio {
-            owner: owner.clone(),
-            name: name.clone(),
+            owner,
+            name,
+
             description,
             holdings: Vec::new(&env),
             metadata: PortfolioMetadata {
@@ -489,9 +490,10 @@ impl CustomStructsContract {
         };
 
         // Store the portfolio
-        env.storage()
-            .instance()
-            .set(&(symbol_short!("portfolio"), owner.clone(), name.clone()), &portfolio);
+        env.storage().instance().set(
+            &(symbol_short!("portfolio"), owner.clone(), name.clone()),
+            &portfolio,
+        );
 
         Ok(portfolio)
     }
@@ -522,11 +524,7 @@ impl CustomStructsContract {
         let mut portfolio: Portfolio = env
             .storage()
             .instance()
-            .get(&(
-                symbol_short!("portfolio"),
-                owner.clone(),
-                portfolio_name.clone(),
-            ))
+            .get(&(symbol_short!("portfolio"), owner, &portfolio_name))
             .ok_or(ContractError::PortfolioNotFound)?;
 
         // Create new holding
@@ -605,9 +603,10 @@ impl CustomStructsContract {
         };
 
         // Store extended profile
-        env.storage()
-            .instance()
-            .set(&(symbol_short!("ext_prof"), address.clone()), &extended_profile);
+        env.storage().instance().set(
+            &(symbol_short!("ext_prof"), address.clone()),
+            &extended_profile,
+        );
 
         Ok(extended_profile)
     }

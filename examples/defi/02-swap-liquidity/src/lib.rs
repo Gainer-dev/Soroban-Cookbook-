@@ -1,7 +1,9 @@
 #![no_std]
 
 use core::cmp;
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol, token};
+use soroban_sdk::{
+    contract, contractimpl, contracttype, symbol_short, token, Address, Env, Symbol,
+};
 
 #[contract]
 pub struct SwapLiquidityContract;
@@ -106,13 +108,11 @@ impl SwapLiquidityContract {
         env.storage().instance().set(&DataKey::TotalShares, &0i128);
     }
 
-    pub fn add_liquidity(
-        env: Env,
-        provider: Address,
-        amount_a: i128,
-        amount_b: i128,
-    ) {
-        assert!(amount_a > 0 && amount_b > 0, "liquidity amounts must be positive");
+    pub fn add_liquidity(env: Env, provider: Address, amount_a: i128, amount_b: i128) {
+        assert!(
+            amount_a > 0 && amount_b > 0,
+            "liquidity amounts must be positive"
+        );
         let this = SwapLiquidityContract;
         let token_a = this.token_a(&env);
         let token_b = this.token_b(&env);
@@ -126,10 +126,20 @@ impl SwapLiquidityContract {
         token::Client::new(&env, &token_b).transfer(&provider, &contract_addr, &amount_b);
 
         let minted_shares = if total_shares == 0 {
-            amount_a.checked_mul(amount_b).expect("overflow in initial shares")
+            amount_a
+                .checked_mul(amount_b)
+                .expect("overflow in initial shares")
         } else {
-            let share_a = amount_a.checked_mul(total_shares).unwrap().checked_div(reserve_a).unwrap();
-            let share_b = amount_b.checked_mul(total_shares).unwrap().checked_div(reserve_b).unwrap();
+            let share_a = amount_a
+                .checked_mul(total_shares)
+                .unwrap()
+                .checked_div(reserve_a)
+                .unwrap();
+            let share_b = amount_b
+                .checked_mul(total_shares)
+                .unwrap()
+                .checked_div(reserve_b)
+                .unwrap();
             cmp::min(share_a, share_b)
         };
 
@@ -168,8 +178,16 @@ impl SwapLiquidityContract {
         let total_shares = this.total_shares(&env);
         assert!(shares <= total_shares, "not enough pool shares");
 
-        let amount_a = reserve_a.checked_mul(shares).unwrap().checked_div(total_shares).unwrap();
-        let amount_b = reserve_b.checked_mul(shares).unwrap().checked_div(total_shares).unwrap();
+        let amount_a = reserve_a
+            .checked_mul(shares)
+            .unwrap()
+            .checked_div(total_shares)
+            .unwrap();
+        let amount_b = reserve_b
+            .checked_mul(shares)
+            .unwrap()
+            .checked_div(total_shares)
+            .unwrap();
         let contract_addr = this.contract_address(&env);
 
         token::Client::new(&env, &lp_token).burn(&provider, &shares);
@@ -204,7 +222,11 @@ impl SwapLiquidityContract {
             return 0;
         }
         let provider_shares = token::Client::new(&env, &this.lp_token(&env)).balance(&provider);
-        provider_shares.checked_mul(10000).unwrap().checked_div(total_shares).unwrap()
+        provider_shares
+            .checked_mul(10000)
+            .unwrap()
+            .checked_div(total_shares)
+            .unwrap()
     }
 
     pub fn get_reserves(env: Env) -> (i128, i128) {

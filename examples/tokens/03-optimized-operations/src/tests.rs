@@ -13,7 +13,8 @@ fn test_standard_initialize() {
     env.mock_all_auths();
 
     let underlying = Address::generate(&env);
-    let standard = StandardTokenOpsClient::new(&env, &env.register_contract(None, StandardTokenOps));
+    let standard =
+        StandardTokenOpsClient::new(&env, &env.register_contract(None, StandardTokenOps));
 
     let result = standard.initialize(&underlying);
     assert!(result.is_ok());

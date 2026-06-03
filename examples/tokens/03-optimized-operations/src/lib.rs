@@ -14,8 +14,8 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, token::TokenClient, vec, Address, Env,
-    Map, Vec,
+    contract, contracterror, contractimpl, contracttype, token::TokenClient, Address, Env, Map,
+    Symbol, Vec,
 };
 
 // ============================================================================
@@ -66,7 +66,7 @@ impl StandardTokenOps {
             .get(&StandardDataKey::Underlying)
             .ok_or(StandardError::NotInitialized)?;
 
-        let old_balance = env
+        let old_balance: i128 = env
             .storage()
             .persistent()
             .get(&StandardDataKey::Balance(user.clone()))
@@ -76,7 +76,7 @@ impl StandardTokenOps {
             .checked_add(amount)
             .ok_or(StandardError::ArithmeticOverflow)?;
 
-        let old_supply = env
+        let old_supply: i128 = env
             .storage()
             .instance()
             .get(&StandardDataKey::TotalSupply)
@@ -292,9 +292,7 @@ impl OptimizedTokenOps {
 
         let mut total: i128 = 0;
         for entry in balances.iter() {
-            total = total
-                .checked_add(entry.1)
-                .unwrap_or(i128::MAX);
+            total = total.checked_add(entry.1).unwrap_or(i128::MAX);
         }
         total
     }

@@ -398,12 +398,7 @@ impl NftMetadataContract {
     /// Transfer `token_id` from `from` to `to`.
     ///
     /// The caller must be the token owner **or** an approved address.
-    pub fn transfer(
-        env: Env,
-        from: Address,
-        to: Address,
-        token_id: u32,
-    ) -> Result<(), NftError> {
+    pub fn transfer(env: Env, from: Address, to: Address, token_id: u32) -> Result<(), NftError> {
         from.require_auth();
         Self::check_approved(&env, &from, token_id)?;
 
@@ -484,9 +479,7 @@ impl NftMetadataContract {
 
     /// Returns the approved address for `token_id`, or `None`.
     pub fn get_approved(env: Env, token_id: u32) -> Option<Address> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Approved(token_id))
+        env.storage().persistent().get(&DataKey::Approved(token_id))
     }
 
     /// Returns `true` if `operator` is approved for all tokens of `owner`.
@@ -544,10 +537,8 @@ impl NftMetadataContract {
             .persistent()
             .extend_ttl(&DataKey::Metadata(token_id), 17_280, 120_960);
 
-        env.events().publish(
-            (symbol_short!("updmeta"), symbol_short!("nft")),
-            token_id,
-        );
+        env.events()
+            .publish((symbol_short!("updmeta"), symbol_short!("nft")), token_id);
 
         Ok(())
     }

@@ -4,7 +4,9 @@
 
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Symbol, Vec};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Symbol, Vec,
+};
 
 #[contracttype]
 #[derive(Clone)]
@@ -76,7 +78,9 @@ impl EventHistory {
         }
 
         env.storage().instance().set(&DataKey::Admin, &admin);
-        env.storage().instance().set(&DataKey::MaxEntries, &max_entries);
+        env.storage()
+            .instance()
+            .set(&DataKey::MaxEntries, &max_entries);
         env.storage().instance().set(&DataKey::StartIndex, &0u32);
         env.storage().instance().set(&DataKey::NextIndex, &0u32);
         env.storage().instance().set(&DataKey::Count, &0u32);
@@ -103,7 +107,9 @@ impl EventHistory {
                 .persistent()
                 .remove(&DataKey::Entry(start_index));
             start_index = start_index.checked_add(1).unwrap_or(0);
-            env.storage().instance().set(&DataKey::StartIndex, &start_index);
+            env.storage()
+                .instance()
+                .set(&DataKey::StartIndex, &start_index);
         } else {
             count = count.checked_add(1).unwrap_or(count);
             env.storage().instance().set(&DataKey::Count, &count);
@@ -117,9 +123,14 @@ impl EventHistory {
             details: details.clone(),
         };
 
-        env.storage().persistent().set(&DataKey::Entry(next_index), &entry);
-        env.storage().instance().set(&DataKey::NextIndex, &(next_index + 1));
-        env.events().publish((EVENT_AUDIT, action, actor.clone()), details);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Entry(next_index), &entry);
+        env.storage()
+            .instance()
+            .set(&DataKey::NextIndex, &(next_index + 1));
+        env.events()
+            .publish((EVENT_AUDIT, action, actor.clone()), details);
 
         Ok(next_index)
     }
@@ -205,12 +216,7 @@ impl EventHistory {
         })
     }
 
-    pub fn query_by_time(
-        env: Env,
-        earliest: u64,
-        latest: u64,
-        limit: u32,
-    ) -> Vec<AuditEntry> {
+    pub fn query_by_time(env: Env, earliest: u64, latest: u64, limit: u32) -> Vec<AuditEntry> {
         if limit == 0 {
             return Vec::new(&env);
         }

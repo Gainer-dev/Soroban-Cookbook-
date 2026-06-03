@@ -1,5 +1,5 @@
 use super::*;
-use soroban_sdk::{Env, Address, Vec};
+use soroban_sdk::{Address, Env, Vec};
 
 #[test]
 fn test_initialize() {

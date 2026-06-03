@@ -345,7 +345,9 @@ impl DataTypesContract {
 
         // Copy bytes into the array
         for (i, byte) in array.iter_mut().enumerate() {
-            *byte = data.get(i as u32).unwrap();
+            *byte = data
+                .get(i as u32)
+                .unwrap_or_else(|| panic!("Failed to read byte at index {i}"));
         }
 
         BytesN::<32>::from_array(&env, &array)

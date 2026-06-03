@@ -16,16 +16,10 @@ pub enum AuthError {
     ProposalNotFound = 3,
     AlreadyApproved = 4,
     AlreadyExecuted = 5,
-<<<<<<< HEAD
-    AlreadyCanceled = 6,
-    ThresholdNotMet = 7,
-    AlreadyInitialized = 8,
-=======
     ThresholdNotMet = 6,
     AlreadyCancelled = 7,
     ProposalCancelled = 8,
     AlreadyInitialized = 9,
->>>>>>> issue434
 }
 
 #[contracttype]
@@ -42,11 +36,7 @@ pub enum DataKey {
 pub struct Proposal {
     pub approvals: Vec<Address>,
     pub executed: bool,
-<<<<<<< HEAD
-    pub canceled: bool,
-=======
     pub cancelled: bool,
->>>>>>> issue434
 }
 
 #[contract]
@@ -97,11 +87,7 @@ impl MultiPartyAuth {
         let proposal = Proposal {
             approvals: Vec::new(&env),
             executed: false,
-<<<<<<< HEAD
-            canceled: false,
-=======
             cancelled: false,
->>>>>>> issue434
         };
 
         env.storage()
@@ -138,13 +124,8 @@ impl MultiPartyAuth {
             return Err(AuthError::AlreadyExecuted);
         }
 
-<<<<<<< HEAD
-        if proposal.canceled {
-            return Err(AuthError::AlreadyCanceled);
-=======
         if proposal.cancelled {
             return Err(AuthError::ProposalCancelled);
->>>>>>> issue434
         }
 
         if proposal.approvals.contains(&signer) {
@@ -183,11 +164,11 @@ impl MultiPartyAuth {
             return Err(AuthError::AlreadyExecuted);
         }
 
-        if proposal.canceled {
-            return Err(AuthError::AlreadyCanceled);
+        if proposal.cancelled {
+            return Err(AuthError::AlreadyCancelled);
         }
 
-        proposal.canceled = true;
+        proposal.cancelled = true;
         env.storage()
             .persistent()
             .set(&DataKey::Proposal(proposal_id), &proposal);
@@ -215,16 +196,11 @@ impl MultiPartyAuth {
             return Err(AuthError::AlreadyExecuted);
         }
 
-<<<<<<< HEAD
-        if proposal.canceled {
-            return Err(AuthError::AlreadyCanceled);
-=======
         if proposal.cancelled {
             return Err(AuthError::ProposalCancelled);
->>>>>>> issue434
         }
 
-        if proposal.approvals.len() < threshold {
+        if (proposal.approvals.len() as u32) < threshold {
             return Err(AuthError::ThresholdNotMet);
         }
 
@@ -236,72 +212,10 @@ impl MultiPartyAuth {
         Ok(true)
     }
 
-    /// Cancel a proposal before it is executed
-    pub fn cancel(env: Env, proposal_id: u32, canceller: Address) -> Result<(), AuthError> {
-        canceller.require_auth();
-
-        let signers: Vec<Address> = env
-            .storage()
-            .instance()
-            .get(&DataKey::Signers)
-            .ok_or(AuthError::NotAuthorized)?;
-
-        if !signers.contains(&canceller) {
-            return Err(AuthError::NotAuthorized);
-        }
-
-        let mut proposal: Proposal = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Proposal(proposal_id))
-            .ok_or(AuthError::ProposalNotFound)?;
-
-        if proposal.executed {
-            return Err(AuthError::AlreadyExecuted);
-        }
-
-        if proposal.cancelled {
-            return Err(AuthError::AlreadyCancelled);
-        }
-
-        proposal.cancelled = true;
-        env.storage()
-            .persistent()
-            .set(&DataKey::Proposal(proposal_id), &proposal);
-
-        Ok(())
-    }
-
-    /// Get proposal status
-    pub fn get_proposal(env: Env, proposal_id: u32) -> Result<Proposal, AuthError> {
+    /// Get proposal details
+    pub fn get_proposal(env: Env, proposal_id: u32) -> Option<Proposal> {
         env.storage()
             .persistent()
             .get(&DataKey::Proposal(proposal_id))
-            .ok_or(AuthError::ProposalNotFound)
-    }
-
-    /// Require multiple addresses to authorize in a single call
-    pub fn multi_auth_action(_env: Env, signers: Vec<Address>) -> bool {
-        for signer in signers.iter() {
-            signer.require_auth();
-        }
-        true
-    }
-
-    /// Require authorization from all configured signers
-    pub fn require_all_signers(env: Env) -> Result<bool, AuthError> {
-        let signers: Vec<Address> = env
-            .storage()
-            .instance()
-            .get(&DataKey::Signers)
-            .ok_or(AuthError::NotAuthorized)?;
-
-        for signer in signers.iter() {
-            signer.require_auth();
-        }
-        Ok(true)
     }
 }
-
-#[cfg(test)]
-mod test;

@@ -1,6 +1,8 @@
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, String, Vec};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, String, Vec,
+};
 
 #[contracttype]
 #[derive(Clone)]
@@ -36,7 +38,12 @@ pub struct BasicNftContract;
 
 #[contractimpl]
 impl BasicNftContract {
-    pub fn initialize(env: Env, admin: Address, name: String, symbol: String) -> Result<(), NftError> {
+    pub fn initialize(
+        env: Env,
+        admin: Address,
+        name: String,
+        symbol: String,
+    ) -> Result<(), NftError> {
         if env.storage().instance().has(&DataKey::Admin) {
             return Err(NftError::AlreadyInitialized);
         }
@@ -48,7 +55,10 @@ impl BasicNftContract {
         env.storage().instance().set(&DataKey::Symbol, &symbol);
         env.storage().instance().set(&DataKey::TotalSupply, &0u32);
 
-        env.events().publish((symbol_short!("init"), symbol_short!("nft")), (name, symbol));
+        env.events().publish(
+            (symbol_short!("init"), symbol_short!("nft")),
+            (name, symbol),
+        );
 
         Ok(())
     }
@@ -68,7 +78,10 @@ impl BasicNftContract {
     }
 
     pub fn total_supply(env: Env) -> u32 {
-        env.storage().instance().get(&DataKey::TotalSupply).unwrap_or(0)
+        env.storage()
+            .instance()
+            .get(&DataKey::TotalSupply)
+            .unwrap_or(0)
     }
 
     pub fn owner_of(env: Env, token_id: u32) -> Result<Address, NftError> {
@@ -79,7 +92,10 @@ impl BasicNftContract {
     }
 
     pub fn balance_of(env: Env, owner: Address) -> u32 {
-        env.storage().persistent().get(&DataKey::Balance(owner)).unwrap_or(0)
+        env.storage()
+            .persistent()
+            .get(&DataKey::Balance(owner))
+            .unwrap_or(0)
     }
 
     pub fn token_by_index(env: Env, index: u32) -> Result<u32, NftError> {
@@ -140,9 +156,10 @@ impl BasicNftContract {
         approved: bool,
     ) -> Result<(), NftError> {
         owner.require_auth();
-        env.storage()
-            .persistent()
-            .set(&DataKey::ApproveAll(owner.clone(), operator.clone()), &approved);
+        env.storage().persistent().set(
+            &DataKey::ApproveAll(owner.clone(), operator.clone()),
+            &approved,
+        );
         env.events().publish(
             (symbol_short!("set_approval_for_all"), symbol_short!("nft")),
             (owner, operator, approved),
@@ -150,11 +167,7 @@ impl BasicNftContract {
         Ok(())
     }
 
-    pub fn is_approved_for_all(
-        env: Env,
-        owner: Address,
-        operator: Address,
-    ) -> bool {
+    pub fn is_approved_for_all(env: Env, owner: Address, operator: Address) -> bool {
         env.storage()
             .persistent()
             .get(&DataKey::ApproveAll(owner, operator))
@@ -165,12 +178,7 @@ impl BasicNftContract {
         env.storage().persistent().get(&DataKey::Approved(token_id))
     }
 
-    pub fn transfer(
-        env: Env,
-        from: Address,
-        to: Address,
-        token_id: u32,
-    ) -> Result<(), NftError> {
+    pub fn transfer(env: Env, from: Address, to: Address, token_id: u32) -> Result<(), NftError> {
         from.require_auth();
         Self::transfer_from_impl(env, from.clone(), from, to, token_id)
     }
@@ -213,7 +221,9 @@ impl BasicNftContract {
         env.storage()
             .persistent()
             .set(&DataKey::TokenIndex(token_id), &supply);
-        env.storage().instance().set(&DataKey::TotalSupply, &(supply + 1));
+        env.storage()
+            .instance()
+            .set(&DataKey::TotalSupply, &(supply + 1));
         Self::add_token_to_owner(&env, to, token_id);
         env.events().publish(
             (symbol_short!("mint"), symbol_short!("nft")),
@@ -241,8 +251,12 @@ impl BasicNftContract {
 
         Self::remove_token_from_owner(&env, from.clone(), token_id);
         Self::add_token_to_owner(&env, to.clone(), token_id);
-        env.storage().persistent().set(&DataKey::Owner(token_id), &to);
-        env.storage().persistent().remove(&DataKey::Approved(token_id));
+        env.storage()
+            .persistent()
+            .set(&DataKey::Owner(token_id), &to);
+        env.storage()
+            .persistent()
+            .remove(&DataKey::Approved(token_id));
         env.events().publish(
             (symbol_short!("transfer"), symbol_short!("nft")),
             (from, to, token_id),
@@ -305,7 +319,9 @@ impl BasicNftContract {
                 &DataKey::OwnedToken(owner.clone(), token_index),
                 &last_token,
             );
-            env.storage().persistent().set(&DataKey::OwnerTokenIndex(last_token), &token_index);
+            env.storage()
+                .persistent()
+                .set(&DataKey::OwnerTokenIndex(last_token), &token_index);
         }
 
         env.storage()
@@ -314,6 +330,8 @@ impl BasicNftContract {
         env.storage()
             .persistent()
             .remove(&DataKey::OwnerTokenIndex(token_id));
-        env.storage().persistent().set(&DataKey::Balance(owner), &last_index);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Balance(owner), &last_index);
     }
 }

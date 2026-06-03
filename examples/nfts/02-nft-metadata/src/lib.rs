@@ -66,7 +66,9 @@ impl NFTMetadataContract {
         admin.require_auth();
         storage.instance().set(&DataKey::Admin, &admin);
         storage.instance().set(&DataKey::BaseUri, &base_uri);
-        storage.instance().set(&DataKey::OnChainMetadata, &on_chain_metadata);
+        storage
+            .instance()
+            .set(&DataKey::OnChainMetadata, &on_chain_metadata);
         Ok(())
     }
 
@@ -104,11 +106,15 @@ impl NFTMetadataContract {
 
         env.storage().instance().set(&DataKey::Owner(token_id), &to);
         if let Some(uri) = token_uri {
-            env.storage().instance().set(&DataKey::TokenUri(token_id), &uri);
+            env.storage()
+                .instance()
+                .set(&DataKey::TokenUri(token_id), &uri);
         }
 
         if let Some(metadata) = metadata {
-            env.storage().instance().set(&DataKey::Metadata(token_id), &metadata);
+            env.storage()
+                .instance()
+                .set(&DataKey::Metadata(token_id), &metadata);
         }
 
         Ok(())
@@ -128,10 +134,7 @@ impl NFTMetadataContract {
         Ok(format_token_uri(&env, &base_uri, token_id))
     }
 
-    pub fn metadata(
-        env: Env,
-        token_id: u64,
-    ) -> Result<Option<NFTMetadata>, NFTError> {
+    pub fn metadata(env: Env, token_id: u64) -> Result<Option<NFTMetadata>, NFTError> {
         let _ = read_owner(&env, token_id)?;
         if !read_on_chain_metadata(&env)? {
             return Err(NFTError::MetadataNotEnabled);
@@ -140,18 +143,16 @@ impl NFTMetadataContract {
         Ok(metadata)
     }
 
-    pub fn set_metadata(
-        env: Env,
-        token_id: u64,
-        metadata: NFTMetadata,
-    ) -> Result<(), NFTError> {
+    pub fn set_metadata(env: Env, token_id: u64, metadata: NFTMetadata) -> Result<(), NFTError> {
         let admin = read_admin(&env)?;
         admin.require_auth();
         let _ = read_owner(&env, token_id)?;
         if !read_on_chain_metadata(&env)? {
             return Err(NFTError::MetadataNotEnabled);
         }
-        env.storage().instance().set(&DataKey::Metadata(token_id), &metadata);
+        env.storage()
+            .instance()
+            .set(&DataKey::Metadata(token_id), &metadata);
         Ok(())
     }
 

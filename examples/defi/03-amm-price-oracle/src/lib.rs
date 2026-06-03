@@ -1,6 +1,8 @@
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol, token};
+use soroban_sdk::{
+    contract, contractimpl, contracttype, symbol_short, token, Address, Env, Symbol,
+};
 
 const PRICE_SCALE: i128 = 1_000_000;
 
@@ -43,51 +45,86 @@ const EVENT_ORACLE_UPDATED: Symbol = symbol_short!("price_updated");
 
 impl AmmPoolContract {
     fn require_owner(&self, env: &Env) {
-        let owner: Address = env.storage().instance().get(&PoolDataKey::Owner).expect("pool not initialized");
+        let owner: Address = env
+            .storage()
+            .instance()
+            .get(&PoolDataKey::Owner)
+            .expect("pool not initialized");
         owner.require_auth();
     }
 
     fn token_a(&self, env: &Env) -> Address {
-        env.storage().instance().get(&PoolDataKey::TokenA).expect("token A missing")
+        env.storage()
+            .instance()
+            .get(&PoolDataKey::TokenA)
+            .expect("token A missing")
     }
 
     fn token_b(&self, env: &Env) -> Address {
-        env.storage().instance().get(&PoolDataKey::TokenB).expect("token B missing")
+        env.storage()
+            .instance()
+            .get(&PoolDataKey::TokenB)
+            .expect("token B missing")
     }
 
     fn reserve_a(&self, env: &Env) -> i128 {
-        env.storage().instance().get(&PoolDataKey::ReserveA).unwrap_or(0i128)
+        env.storage()
+            .instance()
+            .get(&PoolDataKey::ReserveA)
+            .unwrap_or(0i128)
     }
 
     fn reserve_b(&self, env: &Env) -> i128 {
-        env.storage().instance().get(&PoolDataKey::ReserveB).unwrap_or(0i128)
+        env.storage()
+            .instance()
+            .get(&PoolDataKey::ReserveB)
+            .unwrap_or(0i128)
     }
 
     fn fees(&self, env: &Env) -> i128 {
-        env.storage().instance().get(&PoolDataKey::FeeBps).unwrap_or(30i128)
+        env.storage()
+            .instance()
+            .get(&PoolDataKey::FeeBps)
+            .unwrap_or(30i128)
     }
 }
 
 impl AmmOracleContract {
     fn require_owner(&self, env: &Env) {
-        let owner: Address = env.storage().instance().get(&OracleDataKey::Owner).expect("oracle not initialized");
+        let owner: Address = env
+            .storage()
+            .instance()
+            .get(&OracleDataKey::Owner)
+            .expect("oracle not initialized");
         owner.require_auth();
     }
 
     fn pool_contract(&self, env: &Env) -> Address {
-        env.storage().instance().get(&OracleDataKey::PoolContract).expect("pool contract missing")
+        env.storage()
+            .instance()
+            .get(&OracleDataKey::PoolContract)
+            .expect("pool contract missing")
     }
 
     fn last_timestamp(&self, env: &Env) -> u64 {
-        env.storage().instance().get(&OracleDataKey::LastTimestamp).unwrap_or(0u64)
+        env.storage()
+            .instance()
+            .get(&OracleDataKey::LastTimestamp)
+            .unwrap_or(0u64)
     }
 
     fn start_timestamp(&self, env: &Env) -> u64 {
-        env.storage().instance().get(&OracleDataKey::StartTimestamp).unwrap_or(0u64)
+        env.storage()
+            .instance()
+            .get(&OracleDataKey::StartTimestamp)
+            .unwrap_or(0u64)
     }
 
     fn cumulative(&self, env: &Env) -> i128 {
-        env.storage().instance().get(&OracleDataKey::PriceCumulative).unwrap_or(0i128)
+        env.storage()
+            .instance()
+            .get(&OracleDataKey::PriceCumulative)
+            .unwrap_or(0i128)
     }
 }
 
@@ -104,7 +141,10 @@ impl AmmPoolContract {
     }
 
     pub fn deposit(env: Env, provider: Address, amount_a: i128, amount_b: i128) {
-        assert!(amount_a > 0 && amount_b > 0, "deposit amounts must be positive");
+        assert!(
+            amount_a > 0 && amount_b > 0,
+            "deposit amounts must be positive"
+        );
         let this = AmmPoolContract;
         let token_a = this.token_a(&env);
         let token_b = this.token_b(&env);
@@ -115,8 +155,12 @@ impl AmmPoolContract {
 
         let reserve_a = this.reserve_a(&env) + amount_a;
         let reserve_b = this.reserve_b(&env) + amount_b;
-        env.storage().instance().set(&PoolDataKey::ReserveA, &reserve_a);
-        env.storage().instance().set(&PoolDataKey::ReserveB, &reserve_b);
+        env.storage()
+            .instance()
+            .set(&PoolDataKey::ReserveA, &reserve_a);
+        env.storage()
+            .instance()
+            .set(&PoolDataKey::ReserveB, &reserve_b);
     }
 
     pub fn swap(env: Env, sell_token: Address, amount_in: i128, min_amount_out: i128) -> i128 {
@@ -139,7 +183,11 @@ impl AmmPoolContract {
 
         token::Client::new(&env, &in_token).transfer(&env.invoker(), &contract_addr, &amount_in);
 
-        let amount_after_fee = amount_in.checked_mul(10000 - fee_bps).unwrap().checked_div(10000).unwrap();
+        let amount_after_fee = amount_in
+            .checked_mul(10000 - fee_bps)
+            .unwrap()
+            .checked_div(10000)
+            .unwrap();
         let numerator = amount_after_fee.checked_mul(out_reserve).unwrap();
         let denominator = in_reserve + amount_after_fee;
         let amount_out = numerator.checked_div(denominator).unwrap();
@@ -150,11 +198,19 @@ impl AmmPoolContract {
         let new_reserve_in = in_reserve + amount_in;
         let new_reserve_out = out_reserve - amount_out;
         if sell_token == token_a {
-            env.storage().instance().set(&PoolDataKey::ReserveA, &new_reserve_in);
-            env.storage().instance().set(&PoolDataKey::ReserveB, &new_reserve_out);
+            env.storage()
+                .instance()
+                .set(&PoolDataKey::ReserveA, &new_reserve_in);
+            env.storage()
+                .instance()
+                .set(&PoolDataKey::ReserveB, &new_reserve_out);
         } else {
-            env.storage().instance().set(&PoolDataKey::ReserveB, &new_reserve_in);
-            env.storage().instance().set(&PoolDataKey::ReserveA, &new_reserve_out);
+            env.storage()
+                .instance()
+                .set(&PoolDataKey::ReserveB, &new_reserve_in);
+            env.storage()
+                .instance()
+                .set(&PoolDataKey::ReserveA, &new_reserve_out);
         }
         amount_out
     }
@@ -169,7 +225,11 @@ impl AmmPoolContract {
         let reserve_a = this.reserve_a(&env);
         let reserve_b = this.reserve_b(&env);
         assert!(reserve_a > 0 && reserve_b > 0, "empty reserves");
-        reserve_b.checked_mul(PRICE_SCALE).unwrap().checked_div(reserve_a).unwrap()
+        reserve_b
+            .checked_mul(PRICE_SCALE)
+            .unwrap()
+            .checked_div(reserve_a)
+            .unwrap()
     }
 
     pub fn current_price_b_in_a(env: Env) -> i128 {
@@ -177,7 +237,11 @@ impl AmmPoolContract {
         let reserve_a = this.reserve_a(&env);
         let reserve_b = this.reserve_b(&env);
         assert!(reserve_a > 0 && reserve_b > 0, "empty reserves");
-        reserve_a.checked_mul(PRICE_SCALE).unwrap().checked_div(reserve_b).unwrap()
+        reserve_a
+            .checked_mul(PRICE_SCALE)
+            .unwrap()
+            .checked_div(reserve_b)
+            .unwrap()
     }
 }
 
@@ -185,10 +249,18 @@ impl AmmPoolContract {
 impl AmmOracleContract {
     pub fn initialize(env: Env, owner: Address, pool_contract: Address) {
         env.storage().instance().set(&OracleDataKey::Owner, &owner);
-        env.storage().instance().set(&OracleDataKey::PoolContract, &pool_contract);
-        env.storage().instance().set(&OracleDataKey::LastTimestamp, &0u64);
-        env.storage().instance().set(&OracleDataKey::PriceCumulative, &0i128);
-        env.storage().instance().set(&OracleDataKey::StartTimestamp, &0u64);
+        env.storage()
+            .instance()
+            .set(&OracleDataKey::PoolContract, &pool_contract);
+        env.storage()
+            .instance()
+            .set(&OracleDataKey::LastTimestamp, &0u64);
+        env.storage()
+            .instance()
+            .set(&OracleDataKey::PriceCumulative, &0i128);
+        env.storage()
+            .instance()
+            .set(&OracleDataKey::StartTimestamp, &0u64);
     }
 
     pub fn update(env: Env) {
@@ -204,14 +276,22 @@ impl AmmOracleContract {
             current_price.checked_mul(0i128).unwrap()
         } else {
             let elapsed = timestamp.checked_sub(last_ts).unwrap() as i128;
-            cumulative.checked_add(current_price.checked_mul(elapsed).unwrap()).unwrap()
+            cumulative
+                .checked_add(current_price.checked_mul(elapsed).unwrap())
+                .unwrap()
         };
 
         let new_start = if start_ts == 0 { timestamp } else { start_ts };
 
-        env.storage().instance().set(&OracleDataKey::PriceCumulative, &new_cumulative);
-        env.storage().instance().set(&OracleDataKey::LastTimestamp, &timestamp);
-        env.storage().instance().set(&OracleDataKey::StartTimestamp, &new_start);
+        env.storage()
+            .instance()
+            .set(&OracleDataKey::PriceCumulative, &new_cumulative);
+        env.storage()
+            .instance()
+            .set(&OracleDataKey::LastTimestamp, &timestamp);
+        env.storage()
+            .instance()
+            .set(&OracleDataKey::StartTimestamp, &new_start);
 
         env.events().publish(
             (ORACLE_NS, EVENT_ORACLE_UPDATED),

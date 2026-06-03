@@ -212,7 +212,7 @@ mod bench {
 
     use super::*;
     use soroban_sdk::{
-        testutils::{IssuerFlags},
+        testutils::IssuerFlags,
         token::{StellarAssetClient, TokenClient},
         Address, Env,
     };

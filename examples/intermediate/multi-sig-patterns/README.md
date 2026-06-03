@@ -6,7 +6,9 @@ This example demonstrates patterns for requiring multiple parties to authorize a
 
 - **Threshold Signatures**: Require N-of-M signers to approve actions
 - **Proposal-Based Approvals**: Sequential approval workflow for multi-party decisions
-- **Authorization Vectors**: Require multiple addresses in a single transaction- ✅ Proposal cancellation: Abort a proposal before execution- **Multi-Sig Patterns**: Common use cases for multi-party authorization
+- **Authorization Vectors**: Require multiple addresses in a single transaction
+- **Proposal Cancellation**: Abort a proposal before execution
+- **Multi-Sig Patterns**: Common use cases for multi-party authorization
 
 ## 🔍 Contract Overview
 
@@ -18,17 +20,12 @@ The contract implements three complementary multi-party authorization patterns:
 pub fn initialize(env: Env, threshold: u32, signers: Vec<Address>) -> Result<(), AuthError>
 pub fn create_proposal(env: Env, proposer: Address) -> Result<u32, AuthError>
 pub fn approve(env: Env, proposal_id: u32, signer: Address) -> Result<(), AuthError>
-pub fn cancel(env: Env, proposal_id: u32, canceller: Address) -> Result<(), AuthError>
-pub fn execute(env: Env, proposal_id: u32, executor: Address) -> Result<bool, AuthError>
 pub fn cancel(env: Env, proposal_id: u32, signer: Address) -> Result<(), AuthError>
-pub fn get_proposal(env: Env, proposal_id: u32) -> Result<Proposal, AuthError>
+pub fn execute(env: Env, proposal_id: u32, executor: Address) -> Result<bool, AuthError>
+pub fn get_proposal(env: Env, proposal_id: u32) -> Option<Proposal>
 ```
 
-<<<<<<< HEAD
-This pattern allows signers to approve proposals over multiple transactions. Once the threshold is met, anyone can execute the proposal or an authorized signer can cancel it before execution.
-=======
 This pattern allows signers to approve proposals over multiple transactions. Once the threshold is met, anyone can execute the proposal. Proposals can also be cancelled by an authorized signer before execution, preventing further approvals or execution.
->>>>>>> issue434
 
 **Use Cases:**
 - Multi-sig wallets
@@ -111,7 +108,7 @@ Proposals track approvals and execution status:
 pub struct Proposal {
     pub approvals: Vec<Address>,
     pub executed: bool,
-    pub canceled: bool,
+    pub cancelled: bool,
 }
 ```
 
@@ -119,6 +116,7 @@ This prevents:
 - Double approvals from the same signer
 - Execution before threshold is met
 - Re-execution of completed proposals
+- Approval or execution of cancelled proposals
 
 ## 🔒 Security Considerations
 
@@ -142,7 +140,7 @@ client.initialize(&5, &signers);  // More than signers!
 ✅ **Proper validation**
 ```rust
 if threshold == 0 || threshold > signers.len() {
-    panic!("Invalid threshold");
+    return Err(AuthError::InvalidThreshold);
 }
 ```
 
@@ -155,7 +153,7 @@ proposal.approvals.push_back(signer);
 ✅ **Check for duplicates**
 ```rust
 if proposal.approvals.contains(&signer) {
-    panic!("Already approved");
+    return Err(AuthError::AlreadyApproved);
 }
 ```
 
@@ -218,6 +216,8 @@ Tests cover:
 - ✅ Multi-auth in single transaction
 - ✅ All-signers requirement
 - ✅ Unauthorized signer rejection
+- ✅ Proposal cancellation by authorized signers
+- ✅ Prevention of re-cancelling or cancelling executed proposals
 
 ## 🚀 Building & Deployment
 
@@ -240,30 +240,3 @@ soroban contract invoke \
   --threshold 2 \
   --signers '["<ALICE_ADDRESS>", "<BOB_ADDRESS>", "<CHARLIE_ADDRESS>"]'
 ```
-
-## 🔄 Comparison with Single-Party Auth
-
-| Aspect | Single-Party | Multi-Party |
-|--------|-------------|-------------|
-| **Signers** | One address | Multiple addresses |
-| **Approval** | Immediate | Sequential or simultaneous |
-| **Security** | Single point of failure | Distributed trust |
-| **Complexity** | Simple | More complex state management |
-| **Use Case** | Personal accounts | Shared resources, governance |
-
-## 🎓 Next Steps
-
-- [Authentication Basics](../../basics/03-authentication/) - Single-party auth patterns
-- [Governance Examples](../../governance/) - DAO voting and proposals
-- [DeFi Examples](../../defi/) - Multi-sig in financial protocols
-- [Advanced Patterns](../../advanced/) - Cross-contract multi-party auth
-
-## 📚 References
-
-- [Soroban Authorization](https://developers.stellar.org/docs/smart-contracts/fundamentals-and-concepts/authorization)
-- [Multi-Signature Wallets](https://developers.stellar.org/docs/smart-contracts/example-contracts/multi-sig)
-- [Soroban SDK Auth](https://docs.rs/soroban-sdk/latest/soroban_sdk/auth/index.html)
-
----
-
-**Pattern Summary**: Multi-party authorization distributes trust across multiple signers, requiring threshold approval for sensitive operations. Use proposal-based patterns for asynchronous approvals and authorization vectors for atomic multi-party transactions.

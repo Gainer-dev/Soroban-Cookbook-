@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, BytesN, Env, Address, Symbol, Bytes};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Bytes, BytesN, Env, Symbol};
 
 // -------------------------------------------------
 // Registry Contract
@@ -18,7 +18,9 @@ pub enum RegistryKey {
 impl Registry {
     pub fn register(env: Env, name: Symbol, addr: Address) {
         // allow anyone to register in this example
-        env.storage().persistent().set(&RegistryKey::Entry(name.clone()), &addr);
+        env.storage()
+            .persistent()
+            .set(&RegistryKey::Entry(name.clone()), &addr);
         // track list omitted for brevity
     }
 
@@ -47,8 +49,12 @@ impl Factory {
         if env.storage().instance().has(&FactoryKey::WasmHash) {
             return;
         }
-        env.storage().instance().set(&FactoryKey::WasmHash, &wasm_hash);
-        env.storage().instance().set(&FactoryKey::RegistryAddr, &registry);
+        env.storage()
+            .instance()
+            .set(&FactoryKey::WasmHash, &wasm_hash);
+        env.storage()
+            .instance()
+            .set(&FactoryKey::RegistryAddr, &registry);
     }
 
     pub fn create_instance(env: Env, salt: i128, name: Symbol, creator: Address) -> Address {
@@ -64,7 +70,10 @@ impl Factory {
         let mut salt_input: Bytes = Bytes::new(&env);
         salt_input.extend_from_slice(&salt.to_be_bytes());
         let salt_hash: BytesN<32> = env.crypto().sha256(&salt_input).into();
-        let deployed_address = env.deployer().with_current_contract(salt_hash).deploy(wasm_hash);
+        let deployed_address = env
+            .deployer()
+            .with_current_contract(salt_hash)
+            .deploy(wasm_hash);
 
         // register deployed address in registry
         let registry: Address = env
@@ -107,7 +116,9 @@ impl Target {
 
     // Simple upgrade marker to simulate writing a new implementation hash
     pub fn set_upgrade_marker(env: Env, marker: i128) {
-        env.storage().persistent().set(&TargetKey::UpgradeMarker, &marker);
+        env.storage()
+            .persistent()
+            .set(&TargetKey::UpgradeMarker, &marker);
     }
 
     pub fn get_upgrade_marker(env: Env) -> Option<i128> {

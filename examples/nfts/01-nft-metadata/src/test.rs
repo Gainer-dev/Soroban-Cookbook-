@@ -84,10 +84,7 @@ fn test_initialize_success() {
         client.name().unwrap(),
         String::from_str(&env, "My Collection")
     );
-    assert_eq!(
-        client.symbol().unwrap(),
-        String::from_str(&env, "MNFT")
-    );
+    assert_eq!(client.symbol().unwrap(), String::from_str(&env, "MNFT"));
     assert_eq!(client.total_supply(), 0);
 }
 

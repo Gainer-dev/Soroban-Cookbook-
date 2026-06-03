@@ -69,7 +69,6 @@ For collection benchmarks specifically:
 ```bash
 cargo test -p collection-types benchmark -- --nocapture
 ```
-
 ---
 
 *Last updated: March 2026*

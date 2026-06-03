@@ -10,7 +10,7 @@
 //! 4. Borrow from the new pool to cover (flash loan amount + fee)
 //! 5. Flash loan provider pulls back the repayment automatically
 
-use soroban_sdk::{contract, contractimpl, contractclient, contracttype, token, Address, Env};
+use soroban_sdk::{contract, contractclient, contractimpl, contracttype, token, Address, Env};
 
 // ---------------------------------------------------------------------------
 // External contract interfaces
@@ -76,11 +76,18 @@ impl RefinancingContract {
 
         env.storage().temporary().set(&DataKey::OldPool, &old_pool);
         env.storage().temporary().set(&DataKey::NewPool, &new_pool);
-        env.storage().temporary().set(&DataKey::Collateral, &collateral);
-        env.storage().temporary().set(&DataKey::DebtAmount, &debt_amount);
+        env.storage()
+            .temporary()
+            .set(&DataKey::Collateral, &collateral);
+        env.storage()
+            .temporary()
+            .set(&DataKey::DebtAmount, &debt_amount);
 
-        FlashLoanClient::new(&env, &flash_loan)
-            .flash_loan(&env.current_contract_address(), &debt_token, &debt_amount);
+        FlashLoanClient::new(&env, &flash_loan).flash_loan(
+            &env.current_contract_address(),
+            &debt_token,
+            &debt_amount,
+        );
 
         env.storage().temporary().remove(&DataKey::OldPool);
         env.storage().temporary().remove(&DataKey::NewPool);
@@ -90,13 +97,7 @@ impl RefinancingContract {
 
     /// Flash loan callback: repay old loan → redeposit collateral → borrow
     /// enough from new pool to repay the flash loan.
-    pub fn on_flash_loan(
-        env: Env,
-        initiator: Address,
-        token: Address,
-        amount: i128,
-        fee: i128,
-    ) {
+    pub fn on_flash_loan(env: Env, initiator: Address, token: Address, amount: i128, fee: i128) {
         let old_pool: Address = env.storage().temporary().get(&DataKey::OldPool).unwrap();
         let new_pool: Address = env.storage().temporary().get(&DataKey::NewPool).unwrap();
         let collateral_token: Address =
