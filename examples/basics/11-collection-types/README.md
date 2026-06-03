@@ -124,7 +124,8 @@ for i in 0..len {
 |------------------|----------------|----------------|
 | Indexed access   | O(1)           | —              |
 | Key lookup       | O(n) scan      | O(log n)       |
-| Insert / update  | O(1) push_back | O(log n)       |
+| Append / insert  | O(1) push_back | O(log n)       |
+| Remove           | O(1) pop_back  | O(log n)       |
 | Iteration        | O(n)           | O(n)           |
 | Storage overhead | Lower          | Higher         |
 | Key ordering     | Insertion order| Sorted by key  |
@@ -133,8 +134,32 @@ for i in 0..len {
 1. Prefer `Map` when you need fast key lookups across many entries.
 2. Prefer `Vec` for pure sequences where you always scan all elements.
 3. `Map::values()` returns values in key-sorted order — useful when order matters.
-4. Avoid storing very large collections in `instance` storage; use `persistent`
+4. Mutating a stored collection reads and writes the whole collection value, so
+   benchmark realistic sizes before keeping growing lists in one storage slot.
+5. Avoid storing very large collections in `instance` storage; use `persistent`
    with per-item keys for unbounded datasets.
+
+## Benchmarks
+
+The test suite includes budget-printing benchmark tests for collection
+operation patterns:
+
+| Benchmark test | Pattern measured | Recommendation |
+|----------------|------------------|----------------|
+| `test_vec_iteration_patterns_benchmark` | `Vec` sum, filter, and missing-item scan over 32 values | Use when every element must be processed; avoid repeated membership scans in large collections. |
+| `test_vec_mutation_patterns_benchmark` | Stored `Vec` append and tail removal | Good for bounded ordered lists; prefer per-item storage for unbounded growth. |
+| `test_map_operation_patterns_benchmark` | `Map` value scan, key extraction, and max-key scan over 16 entries | Use `Map` for keyed data, but remember full-map iteration is still linear. |
+| `test_map_mutation_patterns_benchmark` | Stored `Map` set, overwrite, lookup, and remove | Prefer for repeated key lookup/update; keep the map bounded when stored as one value. |
+
+Run only these benchmarks with:
+
+```bash
+cargo test -p collection-types benchmark -- --nocapture
+```
+
+The printed budget is environment- and SDK-version-dependent. Compare patterns
+within the same local run instead of treating the numbers as permanent protocol
+constants.
 
 ## Build
 

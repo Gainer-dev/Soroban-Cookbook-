@@ -347,8 +347,10 @@ impl ValidationContract {
         required_role: UserRole,
     ) -> Result<(), ValidationError> {
         // Check if address is blacklisted
-        let is_blacklisted = env.storage().instance().has(&DataKey::Blacklist(address));
-
+        let is_blacklisted = env
+            .storage()
+            .instance()
+            .has(&DataKey::Blacklist(address.clone()));
         if is_blacklisted {
             return Err(ValidationError::Blacklisted);
         }

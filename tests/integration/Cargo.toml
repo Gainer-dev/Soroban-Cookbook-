@@ -16,3 +16,5 @@ validation-patterns = { path = "../../examples/basics/06-validation-patterns" }
 custom-structs = { path = "../../examples/basics/08-custom-structs" }
 ajo-factory = { path = "../../examples/intermediate/ajo-factory" }
 multi-sig-patterns = { path = "../../examples/intermediate/multi-sig-patterns" }
+timelock = { path = "../../examples/advanced/02-timelock" }
+token-wrapper = { path = "../../examples/tokens/token-wrapper" }

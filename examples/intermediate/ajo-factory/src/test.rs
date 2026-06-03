@@ -1,79 +1,88 @@
 use super::*;
 use soroban_sdk::{testutils::Address as _, Address, Env};
 
-#[test]
-fn test_ajo_factory_workflow() {
+fn setup() -> (Env, AjoFactoryClient<'static>, Address) {
     let env = Env::default();
     env.mock_all_auths();
-
-    // 1. Setup - Upload Ajo contract WASM
-    let wasm_hash = env.deployer().upload_contract_wasm(Ajo::WASM);
-
-    // 2. Initialize the Factory
-    let factory_id = env.register_contract(None, AjoFactory);
-    let factory_client = AjoFactoryClient::new(&env, &factory_id);
-    factory_client.initialize(&wasm_hash).unwrap();
-
-    // 3. Create a new Ajo instance
-    let creator = Address::generate(&env);
-    let amount = 1000i128;
-    let max_members = 10u32;
-
-    let ajo_address = factory_client
-        .create_ajo(&amount, &max_members, &creator)
-        .unwrap();
-
-    // 4. Verify the new Ajo instance
-    let ajo_client = AjoClient::new(&env, &ajo_address);
-    assert_eq!(ajo_client.get_creator(), creator);
-    assert_eq!(ajo_client.get_amount(), amount);
-
-    // 5. Verify Factory tracking
-    let deployed_ajos = factory_client.get_deployed_ajos();
-    assert_eq!(deployed_ajos.len(), 1);
-    assert_eq!(deployed_ajos.get(0).unwrap(), ajo_address);
-
-    // 6. Create another Ajo instance with the same creator (different salt)
-    let amount2 = 2000i128;
-    let ajo_address2 = factory_client
-        .create_ajo(&amount2, &max_members, &creator)
-        .unwrap();
-
-    assert_ne!(ajo_address, ajo_address2);
-
-    let deployed_ajos2 = factory_client.get_deployed_ajos();
-    assert_eq!(deployed_ajos2.len(), 2);
-    assert_eq!(deployed_ajos2.get(1).unwrap(), ajo_address2);
+    let contract_id = env.register_contract(None, AjoFactory);
+    let client = AjoFactoryClient::new(&env, &contract_id);
+    let admin = Address::generate(&env);
+    client.initialize(&admin);
+    (env, client, admin)
 }
 
 #[test]
-fn test_factory_cannot_be_reinitialized() {
-    let env = Env::default();
+fn test_register_and_deploy_ajo() {
+    let (env, client, admin) = setup();
+    let creator = Address::generate(&env);
     let wasm_hash = env.deployer().upload_contract_wasm(Ajo::WASM);
-    let factory_id = env.register_contract(None, AjoFactory);
-    let factory_client = AjoFactoryClient::new(&env, &factory_id);
 
-    factory_client.initialize(&wasm_hash).unwrap();
-    let result = factory_client.try_initialize(&wasm_hash);
-    assert_eq!(result, Err(Ok(FactoryError::AlreadyInitialized)));
+    client.register_template(&admin, &TEMPLATE_AJO, &DEFAULT_VERSION, &wasm_hash);
+
+    let params = TemplateParams::Ajo(AjoParams {
+        amount: 1000,
+        max_members: 10,
+    });
+
+    let address = client.deploy_template(&creator, &TEMPLATE_AJO, &DEFAULT_VERSION, &params);
+
+    let ajo_client = AjoClient::new(&env, &address);
+    assert_eq!(ajo_client.ajo_creator(), creator);
+    assert_eq!(ajo_client.ajo_amount(), 1000);
+    assert_eq!(ajo_client.ajo_max_members(), 10);
 }
 
 #[test]
-fn test_ajo_cannot_be_reinitialized() {
-    let env = Env::default();
-    env.mock_all_auths();
-
+fn test_register_already_exists() {
+    let (env, client, admin) = setup();
     let wasm_hash = env.deployer().upload_contract_wasm(Ajo::WASM);
 
-    let factory_id = env.register_contract(None, AjoFactory);
-    let factory_client = AjoFactoryClient::new(&env, &factory_id);
-    factory_client.initialize(&wasm_hash).unwrap();
+    client.register_template(&admin, &TEMPLATE_AJO, &DEFAULT_VERSION, &wasm_hash);
+    let result = client.try_register_template(&admin, &TEMPLATE_AJO, &DEFAULT_VERSION, &wasm_hash);
 
+    assert_eq!(result, Err(Ok(FactoryError::TemplateAlreadyRegistered)));
+}
+
+#[test]
+fn test_deploy_not_found() {
+    let (env, client, _) = setup();
     let creator = Address::generate(&env);
-    let ajo_address = factory_client.create_ajo(&100, &10, &creator).unwrap();
+    let params = TemplateParams::Ajo(AjoParams {
+        amount: 1000,
+        max_members: 10,
+    });
 
-    let ajo_client = AjoClient::new(&env, &ajo_address);
-    // Attempting to call initialize again should return error
-    let result = ajo_client.try_initialize(&100, &10, &creator);
-    assert_eq!(result, Err(Ok(FactoryError::AlreadyInitialized)));
+    let result = client.try_deploy_template(&creator, &TEMPLATE_AJO, &DEFAULT_VERSION, &params);
+    assert_eq!(result, Err(Ok(FactoryError::TemplateNotFound)));
+}
+
+#[test]
+fn test_unauthorized_registration() {
+    let (env, client, _) = setup();
+    let attacker = Address::generate(&env);
+    let wasm_hash = env.deployer().upload_contract_wasm(Ajo::WASM);
+
+    let result =
+        client.try_register_template(&attacker, &TEMPLATE_AJO, &DEFAULT_VERSION, &wasm_hash);
+    assert_eq!(result, Err(Ok(FactoryError::Unauthorized)));
+}
+
+#[test]
+fn test_get_instances() {
+    let (env, client, admin) = setup();
+    let creator = Address::generate(&env);
+    let wasm_hash = env.deployer().upload_contract_wasm(Ajo::WASM);
+
+    client.register_template(&admin, &TEMPLATE_AJO, &DEFAULT_VERSION, &wasm_hash);
+
+    let params = TemplateParams::Ajo(AjoParams {
+        amount: 1000,
+        max_members: 10,
+    });
+
+    client.deploy_template(&creator, &TEMPLATE_AJO, &DEFAULT_VERSION, &params);
+    client.deploy_template(&creator, &TEMPLATE_AJO, &DEFAULT_VERSION, &params);
+
+    let instances = client.get_instances(&creator);
+    assert_eq!(instances.len(), 2);
 }

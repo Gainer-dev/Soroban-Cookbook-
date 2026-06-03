@@ -399,7 +399,7 @@ impl CustomStructsContract {
         email: Option<String>,
     ) -> Result<UserProfile, ContractError> {
         let profile = UserProfile {
-            address,
+            address: address.clone(),
             name,
             email,
             avatar_hash: None,
@@ -489,9 +489,10 @@ impl CustomStructsContract {
         };
 
         // Store the portfolio
-        env.storage()
-            .instance()
-            .set(&(symbol_short!("portfolio"), owner, name), &portfolio);
+        env.storage().instance().set(
+            &(symbol_short!("portfolio"), owner.clone(), name.clone()),
+            &portfolio,
+        );
 
         Ok(portfolio)
     }
@@ -563,7 +564,7 @@ impl CustomStructsContract {
         language: String,
     ) -> Result<ExtendedUserProfile, ContractError> {
         // First create basic profile
-        let basic_profile = Self::create_user_profile(env, address, name, None)?;
+        let basic_profile = Self::create_user_profile(env.clone(), address, name, None)?;
 
         // Create extended profile
         let extended_profile = ExtendedUserProfile {
@@ -601,9 +602,10 @@ impl CustomStructsContract {
         };
 
         // Store extended profile
-        env.storage()
-            .instance()
-            .set(&(symbol_short!("ext_prof"), address), &extended_profile);
+        env.storage().instance().set(
+            &(symbol_short!("ext_prof"), address.clone()),
+            &extended_profile,
+        );
 
         Ok(extended_profile)
     }

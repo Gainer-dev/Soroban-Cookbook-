@@ -286,3 +286,152 @@ fn test_map_increment_values_negative_delta() {
     let result = client.map_increment_values(&data, &-10);
     assert_eq!(result.get(symbol_short!("bal")), Some(90));
 }
+
+// ---------------------------------------------------------------------------
+// Collection benchmarks
+// ---------------------------------------------------------------------------
+
+fn benchmark_vec(env: &Env) -> Vec<i128> {
+    let mut items = Vec::new(env);
+    for value in 0..32 {
+        items.push_back(value);
+    }
+    items
+}
+
+fn benchmark_map(env: &Env) -> Map<Symbol, i128> {
+    let mut data: Map<Symbol, i128> = Map::new(env);
+    for (key, value) in [
+        (symbol_short!("k00"), 0),
+        (symbol_short!("k01"), 1),
+        (symbol_short!("k02"), 2),
+        (symbol_short!("k03"), 3),
+        (symbol_short!("k04"), 4),
+        (symbol_short!("k05"), 5),
+        (symbol_short!("k06"), 6),
+        (symbol_short!("k07"), 7),
+        (symbol_short!("k08"), 8),
+        (symbol_short!("k09"), 9),
+        (symbol_short!("k10"), 10),
+        (symbol_short!("k11"), 11),
+        (symbol_short!("k12"), 12),
+        (symbol_short!("k13"), 13),
+        (symbol_short!("k14"), 14),
+        (symbol_short!("k15"), 15),
+    ] {
+        data.set(key, value);
+    }
+    data
+}
+
+/// Benchmark Vec iteration patterns: full scan, filter, and short-circuit search.
+#[test]
+fn test_vec_iteration_patterns_benchmark() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, CollectionTypesContract);
+    let client = CollectionTypesContractClient::new(&env, &contract_id);
+    let items = benchmark_vec(&env);
+
+    println!("--- Vec sum over 32 items Benchmark ---");
+    env.budget().reset_default();
+    let sum = client.vec_sum(&items);
+    env.budget().print();
+    assert_eq!(sum, 496);
+
+    println!("--- Vec filter over 32 items Benchmark ---");
+    env.budget().reset_default();
+    let positive = client.vec_filter_positive(&items);
+    env.budget().print();
+    assert_eq!(positive.len(), 31);
+
+    println!("--- Vec contains missing item Benchmark ---");
+    env.budget().reset_default();
+    let found = client.vec_contains(&items, &99);
+    env.budget().print();
+    assert!(!found);
+}
+
+/// Benchmark Vec storage mutation patterns: repeated append and tail removal.
+#[test]
+fn test_vec_mutation_patterns_benchmark() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, CollectionTypesContract);
+    let client = CollectionTypesContractClient::new(&env, &contract_id);
+
+    println!("--- Vec push_back with instance storage Benchmark ---");
+    env.budget().reset_default();
+    for value in 0..16 {
+        client.vec_push(&value);
+    }
+    env.budget().print();
+    assert_eq!(client.vec_list().len(), 16);
+
+    println!("--- Vec pop_back with instance storage Benchmark ---");
+    env.budget().reset_default();
+    for _ in 0..16 {
+        let _ = client.vec_pop();
+    }
+    env.budget().print();
+    assert_eq!(client.vec_list().len(), 0);
+}
+
+/// Benchmark Map operation patterns: lookup, key extraction, and value iteration.
+#[test]
+fn test_map_operation_patterns_benchmark() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, CollectionTypesContract);
+    let client = CollectionTypesContractClient::new(&env, &contract_id);
+    let data = benchmark_map(&env);
+
+    println!("--- Map sum values over 16 entries Benchmark ---");
+    env.budget().reset_default();
+    let sum = client.map_sum_values(&data);
+    env.budget().print();
+    assert_eq!(sum, 120);
+
+    println!("--- Map keys extraction over 16 entries Benchmark ---");
+    env.budget().reset_default();
+    let keys = client.map_keys(&data);
+    env.budget().print();
+    assert_eq!(keys.len(), 16);
+
+    println!("--- Map max key scan over 16 entries Benchmark ---");
+    env.budget().reset_default();
+    let max_key = client.map_max_key(&data);
+    env.budget().print();
+    assert_eq!(max_key, Some(symbol_short!("k15")));
+}
+
+/// Benchmark Map storage mutation patterns: set, overwrite, lookup, and remove.
+#[test]
+fn test_map_mutation_patterns_benchmark() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, CollectionTypesContract);
+    let client = CollectionTypesContractClient::new(&env, &contract_id);
+
+    println!("--- Map set with instance storage Benchmark ---");
+    env.budget().reset_default();
+    for (key, value) in benchmark_map(&env).iter() {
+        client.map_set(&key, &value);
+    }
+    env.budget().print();
+    assert_eq!(client.map_get_all().len(), 16);
+
+    println!("--- Map overwrite with instance storage Benchmark ---");
+    env.budget().reset_default();
+    client.map_set(&symbol_short!("k08"), &800);
+    env.budget().print();
+    assert_eq!(client.map_get(&symbol_short!("k08")), Some(800));
+
+    println!("--- Map lookup with instance storage Benchmark ---");
+    env.budget().reset_default();
+    let value = client.map_get(&symbol_short!("k15"));
+    env.budget().print();
+    assert_eq!(value, Some(15));
+
+    println!("--- Map remove with instance storage Benchmark ---");
+    env.budget().reset_default();
+    client.map_remove(&symbol_short!("k15"));
+    env.budget().print();
+    assert_eq!(client.map_get(&symbol_short!("k15")), None);
+}
