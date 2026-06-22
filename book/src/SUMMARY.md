@@ -22,11 +22,11 @@
 ## Intermediate (3 examples)
 - [Multi-sig patterns](./examples/intermediate.md)
 - [Ajo Factory](./examples/ajo-factory.md)
-- [Pause / Unpause](./examples/intermediate.md)
+- [Pause / Unpause](./examples/pause-unpause.md)
 
 ## Advanced (3 examples)
 - [Multi-party auth](./examples/advanced.md)
-- [Oracle Pattern](./examples/advanced.md)
+- [Oracle Pattern](./examples/oracle-pattern.md)
 
 # Use Cases
 

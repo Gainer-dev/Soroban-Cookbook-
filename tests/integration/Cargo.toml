@@ -13,14 +13,9 @@ authentication = { path = "../../examples/basics/03-authentication" }
 custom-errors = { path = "../../examples/basics/03-custom-errors" }
 events_structured = { path = "../../examples/basics/04-events", package = "events" }
 validation-patterns = { path = "../../examples/basics/06-validation-patterns" }
-ajo-factory = { path = "../../examples/intermediate/ajo-factory" }
 ajo = { path = "../../examples/intermediate/ajo" }
+ajo-factory = { path = "../../examples/intermediate/ajo-factory" }
 multi-sig-patterns = { path = "../../examples/intermediate/multi-sig-patterns" }
 multi-party-auth = { path = "../../examples/advanced/01-multi-party-auth" }
-custom-errors = { path = "../../examples/basics/03-custom-errors" }
-validation-patterns = { path = "../../examples/basics/06-validation-patterns" }
-custom-structs = { path = "../../examples/basics/08-custom-structs" }
-ajo-factory = { path = "../../examples/intermediate/ajo-factory" }
-multi-sig-patterns = { path = "../../examples/intermediate/multi-sig-patterns" }
 timelock = { path = "../../examples/advanced/02-timelock" }
 token-wrapper = { path = "../../examples/tokens/token-wrapper" }
