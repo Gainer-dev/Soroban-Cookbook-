@@ -86,10 +86,8 @@ impl NftMarketplaceContract {
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::ListingCount, &0u32);
         env.storage().instance().set(&DataKey::TradeCount, &0u32);
-        env.events().publish(
-            (symbol_short!("init"), symbol_short!("marketplace")),
-            (admin,),
-        );
+        env.events()
+            .publish((symbol_short!("init"), symbol_short!("mkt")), (admin,));
         Ok(())
     }
 
@@ -133,7 +131,7 @@ impl NftMarketplaceContract {
             .instance()
             .set(&DataKey::ListingCount, &(listing_id + 1));
         env.events().publish(
-            (symbol_short!("listing"), symbol_short!("fixed_price")),
+            (symbol_short!("listing"), symbol_short!("fixed")),
             (seller, listing_id, price, royalty_recipient, royalty_bps),
         );
         Ok(listing_id)
@@ -368,7 +366,7 @@ impl NftMarketplaceContract {
             .set(&DataKey::Listing(listing_id), &completed_listing);
 
         env.events().publish(
-            (symbol_short!("trade"), symbol_short!("marketplace")),
+            (symbol_short!("trade"), symbol_short!("mkt")),
             (
                 buyer,
                 listing.seller.clone(),

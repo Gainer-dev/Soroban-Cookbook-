@@ -186,7 +186,7 @@ fn read_metadata(env: &Env, token: &Address) -> Result<TokenMetadata, BalanceMan
 }
 
 fn require_non_empty<T>(items: &Vec<T>) -> Result<(), BalanceManagerError> {
-    if items.len() == 0 {
+    if items.is_empty() {
         return Err(BalanceManagerError::EmptyBatch);
     }
     Ok(())

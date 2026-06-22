@@ -1,5 +1,5 @@
 use super::*;
-use soroban_sdk::{testutils::Address as _, vec, vec::Vec, Env};
+use soroban_sdk::{testutils::Address as _, vec, Env, Vec};
 
 fn setup(env: &Env) -> OptimizedTokenClient<'_> {
     let contract_id = env.register_contract(None, OptimizedToken);

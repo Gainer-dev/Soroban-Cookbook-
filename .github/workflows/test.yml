@@ -11,6 +11,8 @@ env:
   # soroban-cli was renamed to stellar-cli at v22.
   # 22.1.0 is the last release under the soroban protocol 21 era.
   STELLAR_CLI_VERSION: 22.1.0
+  # SDK 26 still uses deprecated Events::publish in many examples; allow while migrating.
+  RUSTFLAGS: "-D warnings -A deprecated"
 
 jobs:
   fmt:

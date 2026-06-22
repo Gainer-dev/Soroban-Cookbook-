@@ -5,8 +5,8 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, symbol_short, vec, vec::Vec, Address, Env,
-    Symbol,
+    contract, contracterror, contractimpl, contracttype, symbol_short, vec, Address, Env, Symbol,
+    Vec,
 };
 
 #[contracttype]
@@ -35,7 +35,7 @@ pub enum TokenError {
 }
 
 const EVENT_TRANSFER: Symbol = symbol_short!("transfer");
-const EVENT_BATCH_TRANSFER: Symbol = symbol_short!("batch_transfer");
+const EVENT_BATCH_TRANSFER: Symbol = symbol_short!("batch_xfr");
 
 #[contract]
 pub struct OptimizedToken;

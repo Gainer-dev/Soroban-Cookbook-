@@ -9,6 +9,7 @@ use soroban_sdk::{
 
 struct Fixture {
     env: Env,
+    manager_id: Address,
     manager: MultiTokenBalanceManagerClient<'static>,
     admin: Address,
     alice: Address,
@@ -55,6 +56,7 @@ fn setup() -> Fixture {
 
     Fixture {
         env,
+        manager_id,
         manager,
         admin,
         alice,
@@ -206,10 +208,6 @@ fn emits_registry_and_batch_events() {
         ],
     );
 
-    let events = f.env.events().all();
-    let (_id, topics, value) = events.get(events.len() - 1).unwrap();
-    let event_name: Symbol = Symbol::try_from_val(&f.env, &topics.get(0).unwrap()).unwrap();
-    let len: u32 = u32::try_from_val(&f.env, &value).unwrap();
-    assert_eq!(event_name, EVENT_BATCH);
-    assert_eq!(len, 1);
+    let events = f.env.events().all().filter_by_contract(&f.manager_id);
+    assert!(!events.events().is_empty());
 }

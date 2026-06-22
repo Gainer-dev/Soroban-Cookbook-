@@ -4,7 +4,7 @@ use super::*;
 use soroban_sdk::{
     testutils::{Address as _, Events as _, IssuerFlags},
     token::{StellarAssetClient, TokenClient},
-    Address, Env, TryFromVal,
+    Address, Env, Event,
 };
 
 struct Fixture {
@@ -181,24 +181,26 @@ fn unwrap_fails_if_underlying_backing_is_clawed_back() {
 fn emits_wrap_and_unwrap_events() {
     let f = setup();
 
+    let wrap_event = WrapEvent {
+        user: f.alice.clone(),
+        amount: 100,
+    };
+    let unwrap_event = UnwrapEvent {
+        user: f.alice.clone(),
+        amount: 40,
+    };
+
     f.wrapper.wrap(&f.alice, &100);
     f.wrapper.unwrap(&f.alice, &40);
 
-    let events = f.env.events().all();
-    assert_eq!(events.len(), 7);
-
-    let (_id, wrap_topics, wrap_amount) = events.get(4).unwrap();
-    let wrap_event: Symbol = Symbol::try_from_val(&f.env, &wrap_topics.get(0).unwrap()).unwrap();
-    let wrapped: i128 = i128::try_from_val(&f.env, &wrap_amount).unwrap();
-    assert_eq!(wrap_event, EVENT_WRAP);
-    assert_eq!(wrapped, 100);
-
-    let (_id, unwrap_topics, unwrap_amount) = events.get(6).unwrap();
-    let unwrap_event: Symbol =
-        Symbol::try_from_val(&f.env, &unwrap_topics.get(0).unwrap()).unwrap();
-    let unwrapped: i128 = i128::try_from_val(&f.env, &unwrap_amount).unwrap();
-    assert_eq!(unwrap_event, EVENT_UNWRAP);
-    assert_eq!(unwrapped, 40);
+    let events = f.env.events().all().filter_by_contract(&f.wrapper_id);
+    assert_eq!(
+        events,
+        [
+            wrap_event.to_xdr(&f.env, &f.wrapper_id),
+            unwrap_event.to_xdr(&f.env, &f.wrapper_id),
+        ]
+    );
 }
 
 // ---------------------------------------------------------------------------

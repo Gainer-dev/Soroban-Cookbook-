@@ -14,8 +14,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, token::TokenClient, Address, Env, Map,
-    Symbol, Vec,
+    contract, contracterror, contractimpl, contracttype, token::TokenClient, Address, Env, Map, Vec,
 };
 
 // ============================================================================
