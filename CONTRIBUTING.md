@@ -152,3 +152,21 @@ cargo build --workspace --target wasm32-unknown-unknown --release
 
 - We run targeted tests for changed paths on pull requests to enable fast feedback.
 - For merges to main, the CI fallback runs the entire workspace check to ensure full compatibility.
+
+---
+
+## 🏅 Contributor Recognition
+
+We recognise and celebrate contributor effort.  Every merged PR earns a place
+in the project's **Contributors** list, and sustained contributions unlock
+higher tiers with additional benefits.
+
+| Tier | Threshold | Recognition |
+|------|-----------|-------------|
+| 1 — Contributor | 1 merged PR | Listed in README Contributors |
+| 2 — Cookbook Author | 3+ merged PRs or 1 substantial example | Listed under Authors; quarterly shout-out |
+| 3 — Core Contributor | 10+ merged PRs or 2+ months of sustained engagement | Prominent README credit; roadmap input |
+| 4 — Maintainer | Nominated by existing maintainer | Repo write access; release authority |
+
+See [`docs/recognition-system.md`](./docs/recognition-system.md) for the full
+criteria, nomination process, rewards, and automation plan.
