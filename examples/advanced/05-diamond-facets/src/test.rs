@@ -16,7 +16,7 @@ fn test_token_mint_and_balance() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let id = env.register_contract(None, TokenFacet);
+    let id = env.register(TokenFacet, ());
     let client = TokenFacetClient::new(&env, &id);
 
     let minter = Address::generate(&env);
@@ -33,7 +33,7 @@ fn test_token_transfer() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let id = env.register_contract(None, TokenFacet);
+    let id = env.register(TokenFacet, ());
     let client = TokenFacetClient::new(&env, &id);
 
     let minter = Address::generate(&env);
@@ -53,7 +53,7 @@ fn test_token_transfer_insufficient_balance() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let id = env.register_contract(None, TokenFacet);
+    let id = env.register(TokenFacet, ());
     let client = TokenFacetClient::new(&env, &id);
 
     let minter = Address::generate(&env);
@@ -69,7 +69,7 @@ fn test_token_allowance_and_transfer_from() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let id = env.register_contract(None, TokenFacet);
+    let id = env.register(TokenFacet, ());
     let client = TokenFacetClient::new(&env, &id);
 
     let minter = Address::generate(&env);
@@ -90,7 +90,7 @@ fn test_token_multi_mint_total_supply() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let id = env.register_contract(None, TokenFacet);
+    let id = env.register(TokenFacet, ());
     let client = TokenFacetClient::new(&env, &id);
 
     let minter = Address::generate(&env);
@@ -112,7 +112,7 @@ fn test_access_initialize_and_get_role() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let id = env.register_contract(None, AccessFacet);
+    let id = env.register(AccessFacet, ());
     let client = AccessFacetClient::new(&env, &id);
 
     let admin = Address::generate(&env);
@@ -126,7 +126,7 @@ fn test_access_grant_and_revoke_role() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let id = env.register_contract(None, AccessFacet);
+    let id = env.register(AccessFacet, ());
     let client = AccessFacetClient::new(&env, &id);
 
     let admin = Address::generate(&env);
@@ -148,8 +148,8 @@ fn test_access_storage_isolation_from_token() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let token_id = env.register_contract(None, TokenFacet);
-    let access_id = env.register_contract(None, AccessFacet);
+    let token_id = env.register(TokenFacet, ());
+    let access_id = env.register(AccessFacet, ());
 
     let token_client = TokenFacetClient::new(&env, &token_id);
     let access_client = AccessFacetClient::new(&env, &access_id);
@@ -179,7 +179,7 @@ fn test_registry_set_and_get() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let id = env.register_contract(None, RegistryFacet);
+    let id = env.register(RegistryFacet, ());
     let client = RegistryFacetClient::new(&env, &id);
 
     let owner = Address::generate(&env);
@@ -197,7 +197,7 @@ fn test_registry_update_by_owner() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let id = env.register_contract(None, RegistryFacet);
+    let id = env.register(RegistryFacet, ());
     let client = RegistryFacetClient::new(&env, &id);
 
     let owner = Address::generate(&env);
@@ -217,7 +217,7 @@ fn test_registry_remove_entry() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let id = env.register_contract(None, RegistryFacet);
+    let id = env.register(RegistryFacet, ());
     let client = RegistryFacetClient::new(&env, &id);
 
     let owner = Address::generate(&env);
@@ -234,7 +234,7 @@ fn test_registry_missing_entry_returns_none() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let id = env.register_contract(None, RegistryFacet);
+    let id = env.register(RegistryFacet, ());
     let client = RegistryFacetClient::new(&env, &id);
 
     assert_eq!(client.get_entry(&symbol_short!("nope")), None);
@@ -250,10 +250,10 @@ fn test_router_register_and_query_facets() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let router_id = env.register_contract(None, DiamondRouter);
-    let token_id = env.register_contract(None, TokenFacet);
-    let access_id = env.register_contract(None, AccessFacet);
-    let registry_id = env.register_contract(None, RegistryFacet);
+    let router_id = env.register(DiamondRouter, ());
+    let token_id = env.register(TokenFacet, ());
+    let access_id = env.register(AccessFacet, ());
+    let registry_id = env.register(RegistryFacet, ());
 
     let router = DiamondRouterClient::new(&env, &router_id);
     let admin = Address::generate(&env);
@@ -271,10 +271,10 @@ fn test_router_mint_and_register_inter_facet() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let router_id = env.register_contract(None, DiamondRouter);
-    let token_id = env.register_contract(None, TokenFacet);
-    let access_id = env.register_contract(None, AccessFacet);
-    let registry_id = env.register_contract(None, RegistryFacet);
+    let router_id = env.register(DiamondRouter, ());
+    let token_id = env.register(TokenFacet, ());
+    let access_id = env.register(AccessFacet, ());
+    let registry_id = env.register(RegistryFacet, ());
 
     let router = DiamondRouterClient::new(&env, &router_id);
     let token_client = TokenFacetClient::new(&env, &token_id);

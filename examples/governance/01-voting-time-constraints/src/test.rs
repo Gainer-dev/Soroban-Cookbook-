@@ -4,7 +4,7 @@ use soroban_sdk::{symbol_short, testutils::Address as _, testutils::Ledger as _,
 
 use crate::{ProposalState, VotingContract, VotingContractClient, VotingError};
 
-fn setup(env: &Env) -> (VotingContractClient, Address) {
+fn setup(env: &Env) -> (VotingContractClient<'_>, Address) {
     let contract_id = env.register(VotingContract, ());
     let client = VotingContractClient::new(env, &contract_id);
     let admin = Address::generate(env);

@@ -17,6 +17,7 @@
 //! - Closing / executing: admin or auto (after deadline + grace)
 
 #![no_std]
+#![allow(deprecated)]
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Symbol,

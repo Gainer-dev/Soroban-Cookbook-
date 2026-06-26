@@ -42,6 +42,7 @@
 //! registry facet to log metadata).
 
 #![no_std]
+#![allow(deprecated)]
 
 use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short, Address, Env, String, Symbol,
@@ -393,9 +394,9 @@ pub struct DiamondRouter;
 /// Registered facet addresses held by the router.
 #[contracttype]
 pub enum RouterKey {
-    TokenFacet,
-    AccessFacet,
-    RegistryFacet,
+    Token,
+    Access,
+    Registry,
 }
 
 #[contractimpl]
@@ -410,18 +411,18 @@ impl DiamondRouter {
     ) {
         admin.require_auth();
         assert!(
-            !env.storage().instance().has(&RouterKey::TokenFacet),
+            !env.storage().instance().has(&RouterKey::Token),
             "already registered"
         );
         env.storage()
             .instance()
-            .set(&RouterKey::TokenFacet, &token);
+            .set(&RouterKey::Token, &token);
         env.storage()
             .instance()
-            .set(&RouterKey::AccessFacet, &access);
+            .set(&RouterKey::Access, &access);
         env.storage()
             .instance()
-            .set(&RouterKey::RegistryFacet, &registry);
+            .set(&RouterKey::Registry, &registry);
     }
 
     /// Demonstrate inter-facet communication: mint tokens AND register metadata.
@@ -442,13 +443,13 @@ impl DiamondRouter {
         let token_id: Address = env
             .storage()
             .instance()
-            .get(&RouterKey::TokenFacet)
+            .get(&RouterKey::Token)
             .expect("token facet not registered");
 
         let registry_id: Address = env
             .storage()
             .instance()
-            .get(&RouterKey::RegistryFacet)
+            .get(&RouterKey::Registry)
             .expect("registry facet not registered");
 
         // Step 1: mint via TokenFacet
@@ -473,11 +474,11 @@ impl DiamondRouter {
     /// Query a facet address by name: "token", "access", "registry".
     pub fn get_facet(env: Env, name: Symbol) -> Option<Address> {
         if name == symbol_short!("token") {
-            env.storage().instance().get(&RouterKey::TokenFacet)
+            env.storage().instance().get(&RouterKey::Token)
         } else if name == symbol_short!("access") {
-            env.storage().instance().get(&RouterKey::AccessFacet)
+            env.storage().instance().get(&RouterKey::Access)
         } else if name == symbol_short!("registry") {
-            env.storage().instance().get(&RouterKey::RegistryFacet)
+            env.storage().instance().get(&RouterKey::Registry)
         } else {
             None
         }
