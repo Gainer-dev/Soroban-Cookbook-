@@ -23,9 +23,9 @@ fn setup_test_env(
     env: &Env,
 ) -> (
     Address,
-    ProposalLifecycleContractClient,
+    ProposalLifecycleContractClient<'_>,
     Address,
-    DummyTargetContractClient,
+    DummyTargetContractClient<'_>,
 ) {
     env.mock_all_auths();
 
