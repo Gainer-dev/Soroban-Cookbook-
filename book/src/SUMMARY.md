@@ -55,6 +55,10 @@
 - [Factory, Proxy, and Registry Patterns](./docs/cross-contract-patterns.md)
 - [Troubleshooting](./docs/troubleshooting.md)
 - [Token Development Walkthrough](./docs/token-development-video.md)
+- [DeFi Development Walkthrough](./docs/defi-development-video.md)
+- [Wallet Ecosystem Survey](./docs/wallet-ecosystem.md)
+
+
 
 
 # Contributing

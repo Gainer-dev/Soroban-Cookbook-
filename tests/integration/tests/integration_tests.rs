@@ -8,7 +8,7 @@
 #![cfg(not(target_arch = "wasm32"))]
 #![cfg(test)]
 
-use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env, IntoVal, Symbol, Vec};
+use soroban_sdk::{symbol_short, testutils::{Address as _, Ledger}, Address, Env, IntoVal, Symbol, Vec};
 
 // ---------------------------------------------------------------------------
 // Test 1: Multi-Contract Workflow — Hello World + Storage + Events counter
@@ -908,3 +908,481 @@ fn test_multi_party_auth_cross_function() {
     assert!(auth_addresses.contains(&buyer));
     assert!(auth_addresses.contains(&seller));
 }
+
+// ---------------------------------------------------------------------------
+// NFT and Governance Integration Tests (10 new tests to reach 22 total)
+// ---------------------------------------------------------------------------
+
+// --- Helper contracts for Fractional NFT and Governance tests ---
+
+#[soroban_sdk::contracttype]
+#[derive(Clone)]
+pub enum FractionalDataKey {
+    NftContract,
+    TokenId,
+    ShareSupply,
+    ShareBalance(Address),
+    Initialized,
+}
+
+#[soroban_sdk::contract]
+pub struct FractionalNftContract;
+
+#[soroban_sdk::contractimpl]
+impl FractionalNftContract {
+    pub fn initialize(
+        env: Env,
+        nft_contract: Address,
+        token_id: u32,
+        total_shares: i128,
+        owner: Address,
+    ) {
+        if env.storage().instance().has(&FractionalDataKey::Initialized) {
+            panic!("already initialized");
+        }
+        
+        env.storage().instance().set(&FractionalDataKey::Initialized, &true);
+        env.storage().instance().set(&FractionalDataKey::NftContract, &nft_contract);
+        env.storage().instance().set(&FractionalDataKey::TokenId, &token_id);
+        env.storage().instance().set(&FractionalDataKey::ShareSupply, &total_shares);
+        env.storage().persistent().set(&FractionalDataKey::ShareBalance(owner.clone()), &total_shares);
+        
+        let nft_client = basic_nft::BasicNftContractClient::new(&env, &nft_contract);
+        nft_client.transfer_from(&env.current_contract_address(), &owner, &env.current_contract_address(), &token_id);
+    }
+    
+    pub fn transfer_shares(env: Env, from: Address, to: Address, amount: i128) {
+        from.require_auth();
+        let from_bal: i128 = env.storage().persistent().get(&FractionalDataKey::ShareBalance(from.clone())).unwrap_or(0);
+        if from_bal < amount {
+            panic!("insufficient balance");
+        }
+        let to_bal: i128 = env.storage().persistent().get(&FractionalDataKey::ShareBalance(to.clone())).unwrap_or(0);
+        env.storage().persistent().set(&FractionalDataKey::ShareBalance(from), &(from_bal - amount));
+        env.storage().persistent().set(&FractionalDataKey::ShareBalance(to), &(to_bal + amount));
+    }
+    
+    pub fn redeem(env: Env, redeemer: Address) {
+        redeemer.require_auth();
+        let total_shares: i128 = env.storage().instance().get(&FractionalDataKey::ShareSupply).unwrap();
+        let bal: i128 = env.storage().persistent().get(&FractionalDataKey::ShareBalance(redeemer.clone())).unwrap_or(0);
+        if bal != total_shares {
+            panic!("must own all shares to redeem");
+        }
+        
+        env.storage().persistent().remove(&FractionalDataKey::ShareBalance(redeemer.clone()));
+        
+        let nft_contract: Address = env.storage().instance().get(&FractionalDataKey::NftContract).unwrap();
+        let token_id: u32 = env.storage().instance().get(&FractionalDataKey::TokenId).unwrap();
+        
+        let nft_client = basic_nft::BasicNftContractClient::new(&env, &nft_contract);
+        nft_client.transfer(&env.current_contract_address(), &redeemer, &token_id);
+    }
+    
+    pub fn balance_of(env: Env, address: Address) -> i128 {
+        env.storage().persistent().get(&FractionalDataKey::ShareBalance(address)).unwrap_or(0)
+    }
+}
+
+#[soroban_sdk::contract]
+pub struct GovDummyContract;
+
+#[soroban_sdk::contractimpl]
+impl GovDummyContract {
+    pub fn execute_action(env: Env, value: u32) {
+        env.storage().instance().set(&symbol_short!("executed"), &value);
+    }
+}
+
+// --- Integration Tests ---
+
+// 1. NFT Mint and Direct Transfer
+#[test]
+fn test_nft_mint_and_direct_transfer() {
+    let env = Env::default();
+    env.mock_all_auths();
+    
+    let admin = Address::generate(&env);
+    let alice = Address::generate(&env);
+    let bob = Address::generate(&env);
+    
+    let nft_id = env.register_contract(None, basic_nft::BasicNftContract);
+    let client = basic_nft::BasicNftContractClient::new(&env, &nft_id);
+    
+    client.initialize(&admin, &soroban_sdk::String::from_str(&env, "Test NFT"), &soroban_sdk::String::from_str(&env, "TNFT"));
+    
+    // Mint to Alice
+    client.mint(&admin, &alice, &1u32);
+    assert_eq!(client.owner_of(&1u32), alice);
+    assert_eq!(client.balance_of(&alice), 1);
+    
+    // Transfer from Alice to Bob
+    client.transfer(&alice, &bob, &1u32);
+    assert_eq!(client.owner_of(&1u32), bob);
+    assert_eq!(client.balance_of(&alice), 0);
+    assert_eq!(client.balance_of(&bob), 1);
+}
+
+// 2. NFT Approved Transfer From
+#[test]
+fn test_nft_approved_transfer_from() {
+    let env = Env::default();
+    env.mock_all_auths();
+    
+    let admin = Address::generate(&env);
+    let alice = Address::generate(&env);
+    let bob = Address::generate(&env);
+    let charlie = Address::generate(&env);
+    
+    let nft_id = env.register_contract(None, basic_nft::BasicNftContract);
+    let client = basic_nft::BasicNftContractClient::new(&env, &nft_id);
+    
+    client.initialize(&admin, &soroban_sdk::String::from_str(&env, "Test NFT"), &soroban_sdk::String::from_str(&env, "TNFT"));
+    client.mint(&admin, &alice, &1u32);
+    
+    // Alice approves Bob for token 1
+    client.approve(&alice, &bob, &1u32);
+    assert_eq!(client.get_approved(&1u32).unwrap(), bob);
+    
+    // Bob transfers token 1 from Alice to Charlie
+    client.transfer_from(&bob, &alice, &charlie, &1u32);
+    assert_eq!(client.owner_of(&1u32), charlie);
+    assert!(client.get_approved(&1u32).is_none());
+}
+
+// 3. NFT Operator Transfer
+#[test]
+fn test_nft_operator_transfer() {
+    let env = Env::default();
+    env.mock_all_auths();
+    
+    let admin = Address::generate(&env);
+    let alice = Address::generate(&env);
+    let bob = Address::generate(&env);
+    let charlie = Address::generate(&env);
+    
+    let nft_id = env.register_contract(None, basic_nft::BasicNftContract);
+    let client = basic_nft::BasicNftContractClient::new(&env, &nft_id);
+    
+    client.initialize(&admin, &soroban_sdk::String::from_str(&env, "Test NFT"), &soroban_sdk::String::from_str(&env, "TNFT"));
+    client.mint(&admin, &alice, &1u32);
+    
+    // Alice sets Bob as operator
+    client.set_approval_for_all(&alice, &bob, &true);
+    assert!(client.is_approved_for_all(&alice, &bob));
+    
+    // Bob transfers token 1 from Alice to Charlie
+    client.transfer_from(&bob, &alice, &charlie, &1u32);
+    assert_eq!(client.owner_of(&1u32), charlie);
+}
+
+// 4. Marketplace Fixed Price Listing and Buy
+#[test]
+fn test_marketplace_fixed_price_listing_and_buy() {
+    let env = Env::default();
+    env.mock_all_auths();
+    
+    let mkt_admin = Address::generate(&env);
+    let nft_admin = Address::generate(&env);
+    let seller = Address::generate(&env);
+    let buyer = Address::generate(&env);
+    let royalty_rec = Address::generate(&env);
+    
+    let nft_id = env.register_contract(None, basic_nft::BasicNftContract);
+    let nft_client = basic_nft::BasicNftContractClient::new(&env, &nft_id);
+    nft_client.initialize(&nft_admin, &soroban_sdk::String::from_str(&env, "Test NFT"), &soroban_sdk::String::from_str(&env, "TNFT"));
+    nft_client.mint(&nft_admin, &seller, &1u32);
+    
+    let mkt_id = env.register_contract(None, nft_marketplace::NftMarketplaceContract);
+    let mkt_client = nft_marketplace::NftMarketplaceContractClient::new(&env, &mkt_id);
+    mkt_client.initialize(&mkt_admin);
+    
+    // Seller approves marketplace for token 1
+    nft_client.approve(&seller, &mkt_id, &1u32);
+    
+    // List item on marketplace
+    let items = Vec::from_array(&env, [nft_marketplace::ListingItem {
+        nft_contract: nft_id.clone(),
+        token_id: 1u32,
+    }]);
+    
+    let listing_id = mkt_client.create_fixed_price_listing(&seller, &items, &1000i128, &royalty_rec, &500u32);
+
+    let listing = mkt_client.get_listing(&listing_id);
+    assert_eq!(listing.seller, seller);
+    assert_eq!(listing.price, 1000);
+    assert!(!listing.sold);
+
+    // Buy item
+    mkt_client.buy(&buyer, &listing_id, &1000i128);
+
+    // Complete the transfer (simulated coordinator step matching cross-contract marketplace flow)
+    nft_client.transfer_from(&mkt_id, &seller, &buyer, &1u32);
+
+    let updated_listing = mkt_client.get_listing(&listing_id);
+    assert!(updated_listing.sold);
+    assert_eq!(nft_client.owner_of(&1u32), buyer);
+
+    let trade = mkt_client.get_trade(&0);
+    assert_eq!(trade.buyer, buyer);
+    assert_eq!(trade.seller, seller);
+    assert_eq!(trade.amount, 1000);
+    assert_eq!(trade.royalty_paid, 50); // 1000 * 500 / 10000 = 50
+}
+
+// 5. Marketplace Auction Bidding and Finalization
+#[test]
+fn test_marketplace_auction_bidding_and_finalization() {
+    let env = Env::default();
+    env.mock_all_auths();
+    
+    let mkt_admin = Address::generate(&env);
+    let nft_admin = Address::generate(&env);
+    let seller = Address::generate(&env);
+    let bidder1 = Address::generate(&env);
+    let bidder2 = Address::generate(&env);
+    
+    let nft_id = env.register_contract(None, basic_nft::BasicNftContract);
+    let nft_client = basic_nft::BasicNftContractClient::new(&env, &nft_id);
+    nft_client.initialize(&nft_admin, &soroban_sdk::String::from_str(&env, "Test NFT"), &soroban_sdk::String::from_str(&env, "TNFT"));
+    nft_client.mint(&nft_admin, &seller, &1u32);
+    
+    let mkt_id = env.register_contract(None, nft_marketplace::NftMarketplaceContract);
+    let mkt_client = nft_marketplace::NftMarketplaceContractClient::new(&env, &mkt_id);
+    mkt_client.initialize(&mkt_admin);
+    
+    nft_client.approve(&seller, &mkt_id, &1u32);
+    
+    let items = Vec::from_array(&env, [nft_marketplace::ListingItem {
+        nft_contract: nft_id.clone(),
+        token_id: 1u32,
+    }]);
+    
+    env.ledger().with_mut(|l| l.sequence_number = 100);
+    let listing_id = mkt_client.create_auction_listing(&seller, &items, &500i128, &10u32, &seller, &0u32);
+
+    // Bidding
+    mkt_client.place_bid(&bidder1, &listing_id, &550i128);
+    mkt_client.place_bid(&bidder2, &listing_id, &600i128);
+
+    // Close auction
+    env.ledger().with_mut(|l| l.sequence_number = 111);
+
+    mkt_client.finalize_auction(&bidder1, &listing_id);
+    nft_client.transfer_from(&mkt_id, &seller, &bidder2, &1u32);
+
+    let listing = mkt_client.get_listing(&listing_id);
+    assert!(listing.sold);
+    assert_eq!(nft_client.owner_of(&1u32), bidder2);
+}
+
+// 6. Marketplace Invalid Bids and Early Finalization
+#[test]
+fn test_marketplace_invalid_bids_and_early_finalization() {
+    let env = Env::default();
+    env.mock_all_auths();
+    
+    let mkt_admin = Address::generate(&env);
+    let nft_admin = Address::generate(&env);
+    let seller = Address::generate(&env);
+    let bidder = Address::generate(&env);
+    
+    let nft_id = env.register_contract(None, basic_nft::BasicNftContract);
+    let nft_client = basic_nft::BasicNftContractClient::new(&env, &nft_id);
+    nft_client.initialize(&nft_admin, &soroban_sdk::String::from_str(&env, "Test NFT"), &soroban_sdk::String::from_str(&env, "TNFT"));
+    nft_client.mint(&nft_admin, &seller, &1u32);
+    
+    let mkt_id = env.register_contract(None, nft_marketplace::NftMarketplaceContract);
+    let mkt_client = nft_marketplace::NftMarketplaceContractClient::new(&env, &mkt_id);
+    mkt_client.initialize(&mkt_admin);
+    
+    let items = Vec::from_array(&env, [nft_marketplace::ListingItem {
+        nft_contract: nft_id.clone(),
+        token_id: 1u32,
+    }]);
+    
+    env.ledger().with_mut(|l| l.sequence_number = 100);
+    let listing_id = mkt_client.create_auction_listing(&seller, &items, &500i128, &10u32, &seller, &0u32);
+
+    // Bid too low should error
+    let res = mkt_client.try_place_bid(&bidder, &listing_id, &499i128);
+    assert_eq!(res, Err(Ok(nft_marketplace::MarketplaceError::BidTooLow)));
+    
+    // Finalize too early should error
+    let res2 = mkt_client.try_finalize_auction(&bidder, &listing_id);
+    assert_eq!(res2, Err(Ok(nft_marketplace::MarketplaceError::AuctionNotActive)));
+}
+
+// 7. Fractional NFT Initialization and Transfers
+#[test]
+fn test_fractional_nft_initialization_and_transfers() {
+    let env = Env::default();
+    env.mock_all_auths();
+    
+    let admin = Address::generate(&env);
+    let owner = Address::generate(&env);
+    let alice = Address::generate(&env);
+    
+    let nft_id = env.register_contract(None, basic_nft::BasicNftContract);
+    let nft_client = basic_nft::BasicNftContractClient::new(&env, &nft_id);
+    nft_client.initialize(&admin, &soroban_sdk::String::from_str(&env, "Test NFT"), &soroban_sdk::String::from_str(&env, "TNFT"));
+    nft_client.mint(&admin, &owner, &42u32);
+    
+    let frac_id = env.register_contract(None, FractionalNftContract);
+    let frac_client = FractionalNftContractClient::new(&env, &frac_id);
+    
+    // Owner approves fractional contract for token 42
+    nft_client.approve(&owner, &frac_id, &42u32);
+    
+    // Initialize fractional NFT (locks NFT, mints 1000 shares to owner)
+    frac_client.initialize(&nft_id, &42u32, &1000i128, &owner);
+    
+    assert_eq!(nft_client.owner_of(&42u32), frac_id);
+    assert_eq!(frac_client.balance_of(&owner), 1000);
+    
+    // Owner transfers 250 shares to Alice
+    frac_client.transfer_shares(&owner, &alice, &250i128);
+    assert_eq!(frac_client.balance_of(&owner), 750);
+    assert_eq!(frac_client.balance_of(&alice), 250);
+}
+
+// 8. Fractional NFT Redemption
+#[test]
+fn test_fractional_nft_redemption() {
+    let env = Env::default();
+    env.mock_all_auths();
+    
+    let admin = Address::generate(&env);
+    let owner = Address::generate(&env);
+    let alice = Address::generate(&env);
+    
+    let nft_id = env.register_contract(None, basic_nft::BasicNftContract);
+    let nft_client = basic_nft::BasicNftContractClient::new(&env, &nft_id);
+    nft_client.initialize(&admin, &soroban_sdk::String::from_str(&env, "Test NFT"), &soroban_sdk::String::from_str(&env, "TNFT"));
+    nft_client.mint(&admin, &owner, &42u32);
+    
+    let frac_id = env.register_contract(None, FractionalNftContract);
+    let frac_client = FractionalNftContractClient::new(&env, &frac_id);
+    
+    nft_client.approve(&owner, &frac_id, &42u32);
+    frac_client.initialize(&nft_id, &42u32, &1000i128, &owner);
+    
+    frac_client.transfer_shares(&owner, &alice, &300i128);
+    
+    // Try to redeem without all shares (fails)
+    let res = frac_client.try_redeem(&owner);
+    assert!(res.is_err());
+    
+    // Alice transfers shares back to owner
+    frac_client.transfer_shares(&alice, &owner, &300i128);
+    
+    // Now owner can redeem (unlocks NFT)
+    frac_client.redeem(&owner);
+    
+    assert_eq!(nft_client.owner_of(&42u32), owner);
+    assert_eq!(frac_client.balance_of(&owner), 0);
+}
+
+// 9. Governance Proposal Lifecycle Full Flow
+#[test]
+fn test_governance_proposal_lifecycle_full_flow() {
+    let env = Env::default();
+    env.mock_all_auths();
+    
+    let admin = Address::generate(&env);
+    let proposer = Address::generate(&env);
+    let voter1 = Address::generate(&env);
+    let voter2 = Address::generate(&env);
+    
+    let gov_id = env.register_contract(None, proposal_lifecycle::ProposalLifecycleContract);
+    let gov_client = proposal_lifecycle::ProposalLifecycleContractClient::new(&env, &gov_id);
+    gov_client.initialize(&admin, &100i128);
+    
+    let dummy_id = env.register_contract(None, GovDummyContract);
+    let dummy_client = GovDummyContractClient::new(&env, &dummy_id);
+    
+    let description = soroban_sdk::String::from_str(&env, "Set value to 99");
+    let action_args = Vec::from_array(&env, [99u32.into_val(&env)]);
+    
+    let proposal_id = gov_client.create_proposal(
+        &proposer,
+        &description,
+        &dummy_id,
+        &Symbol::new(&env, "execute_action"),
+        &action_args,
+    );
+    
+    env.ledger().with_mut(|l| l.sequence_number = 100);
+    gov_client.submit_proposal(&proposer, &proposal_id, &50u32, &100u32); // vote end = 150, exec end = 250
+    
+    // Voting
+    gov_client.vote(&voter1, &proposal_id, &true, &70i128);
+    gov_client.vote(&voter2, &proposal_id, &true, &40i128); // total = 110 (quorum met)
+    
+    // Close voting
+    env.ledger().with_mut(|l| l.sequence_number = 155);
+    
+    assert_eq!(gov_client.get_proposal_state(&proposal_id), proposal_lifecycle::ProposalState::Passed);
+    
+    // Execute proposal
+    gov_client.execute_proposal(&voter1, &proposal_id);
+    
+    assert_eq!(gov_client.get_proposal_state(&proposal_id), proposal_lifecycle::ProposalState::Executed);
+    
+    // Verify target executed
+    let val: u32 = env.as_contract(&dummy_id, || {
+        env.storage().instance().get(&symbol_short!("executed")).unwrap()
+    });
+    assert_eq!(val, 99);
+}
+
+// 10. Governance Proposal Expired and Cancelled
+#[test]
+fn test_governance_proposal_expired_and_cancelled() {
+    let env = Env::default();
+    env.mock_all_auths();
+    
+    let admin = Address::generate(&env);
+    let proposer = Address::generate(&env);
+    let voter = Address::generate(&env);
+    let dummy_id = Address::generate(&env);
+    
+    let gov_id = env.register_contract(None, proposal_lifecycle::ProposalLifecycleContract);
+    let gov_client = proposal_lifecycle::ProposalLifecycleContractClient::new(&env, &gov_id);
+    gov_client.initialize(&admin, &100i128);
+    
+    let description = soroban_sdk::String::from_str(&env, "Mock Proposal");
+    let proposal_id_1 = gov_client.create_proposal(
+        &proposer,
+        &description,
+        &dummy_id,
+        &Symbol::new(&env, "mock_action"),
+        &Vec::new(&env),
+    );
+    
+    // Proposal 1: Proposer cancels
+    gov_client.cancel_proposal(&proposer, &proposal_id_1);
+    assert_eq!(gov_client.get_proposal_state(&proposal_id_1), proposal_lifecycle::ProposalState::Cancelled);
+    
+    // Proposal 2: Expired
+    let proposal_id_2 = gov_client.create_proposal(
+        &proposer,
+        &description,
+        &dummy_id,
+        &Symbol::new(&env, "mock_action"),
+        &Vec::new(&env),
+    );
+    
+    env.ledger().with_mut(|l| l.sequence_number = 200);
+    gov_client.submit_proposal(&proposer, &proposal_id_2, &50u32, &100u32); // vote end = 250, exec end = 350
+    gov_client.vote(&voter, &proposal_id_2, &true, &150i128); // quorum met
+    
+    // Advance sequence beyond execution end
+    env.ledger().with_mut(|l| l.sequence_number = 351);
+    
+    assert_eq!(gov_client.get_proposal_state(&proposal_id_2), proposal_lifecycle::ProposalState::Expired);
+    
+    let res = gov_client.try_execute_proposal(&voter, &proposal_id_2);
+    assert_eq!(res, Err(Ok(proposal_lifecycle::ProposalError::ExecutionEnded)));
+}
+
