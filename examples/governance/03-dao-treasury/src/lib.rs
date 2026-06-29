@@ -45,8 +45,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contracterror, contractevent, contractimpl, contracttype, Address,
-    BytesN, Env,
+    contract, contracterror, contractevent, contractimpl, contracttype, Address, BytesN, Env,
 };
 
 // ---------------------------------------------------------------------------
@@ -172,8 +171,6 @@ pub enum DaoError {
 // Events  (04-events pattern: structured topics + typed payload)
 // ---------------------------------------------------------------------------
 
-
-
 /// Emitted once when the DAO is initialised.
 #[contractevent]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -279,9 +276,7 @@ impl DaoContract {
         env.storage()
             .instance()
             .set(&DataKey::ExecDuration, &exec_duration);
-        env.storage()
-            .instance()
-            .set(&DataKey::ProposalCount, &0u32);
+        env.storage().instance().set(&DataKey::ProposalCount, &0u32);
         env.storage()
             .persistent()
             .set(&DataKey::TreasuryBalance, &0i128);
@@ -536,7 +531,11 @@ impl DaoContract {
         // Execute the proposal action
         match proposal.kind {
             ProposalKind::Transfer => {
-                Self::execute_transfer(&env, proposal.transfer_recipient.clone(), proposal.transfer_amount)?;
+                Self::execute_transfer(
+                    &env,
+                    proposal.transfer_recipient.clone(),
+                    proposal.transfer_amount,
+                )?;
             }
             ProposalKind::Upgrade => {
                 env.deployer()
