@@ -17,6 +17,7 @@ Please read our [Code of Conduct](./CODE_OF_CONDUCT.md) before participating.
 - [Example Contribution Template](#-example-contribution-template)
 - [Validation Steps](#-validation-steps)
 - [Bug Bounty Program](#-bug-bounty-program)
+- [Recognition System](#-recognition-system)
 
 ---
 
@@ -209,3 +210,9 @@ Rewards are paid in XLM at the time of payout. The triage team makes final sever
 The program is funded from the project's community treasury. Total annual budget: **$5,000 USD**. Awards are distributed on a first-come, first-served basis until the annual budget is exhausted.
 
 For full details, see [`docs/security-audit/bug-bounty.md`](./docs/security-audit/bug-bounty.md).
+
+## 🏆 Recognition System
+
+All contributors are recognized for their work. We have a tiered recognition system with rewards ranging from public acknowledgment to Stellar swag and community spotlights.
+
+See [docs/recognition-system.md](./docs/recognition-system.md) for the full criteria, tiers, rewards, and automation plan.
