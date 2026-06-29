@@ -122,7 +122,7 @@ impl Sep41Token {
 
         env.storage()
             .persistent()
-            .set(&DataKey::Allowance(owner, spender), &amount);
+            .set(&DataKey::Allowance(owner.clone(), spender.clone()), &amount);
 
         publish_approval(&env, owner, spender, amount);
 

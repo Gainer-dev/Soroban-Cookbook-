@@ -1,8 +1,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Bytes, Env,
-    Symbol,
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Bytes, Env, Symbol,
 };
 
 const BRIDGE_NS: Symbol = symbol_short!("bridge");
@@ -113,7 +112,9 @@ impl BridgeSecurityContract {
             .instance()
             .set(&DataKey::WindowStart, &env.ledger().timestamp());
         env.storage().instance().set(&DataKey::WindowUsed, &0i128);
-        env.storage().instance().set(&DataKey::NextTransferId, &1u64);
+        env.storage()
+            .instance()
+            .set(&DataKey::NextTransferId, &1u64);
 
         Ok(())
     }
@@ -133,7 +134,11 @@ impl BridgeSecurityContract {
 
         let now = env.ledger().timestamp();
         let mut rate_limit = read_rate_limit_state(&env)?;
-        if now >= rate_limit.window_start.saturating_add(rate_limit.window_seconds) {
+        if now
+            >= rate_limit
+                .window_start
+                .saturating_add(rate_limit.window_seconds)
+        {
             rate_limit.window_start = now;
             rate_limit.used_in_window = 0;
         }
@@ -157,11 +162,15 @@ impl BridgeSecurityContract {
             status: TransferStatus::Pending,
         };
 
-        env.storage().persistent().set(&DataKey::Transfer(transfer_id), &transfer);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Transfer(transfer_id), &transfer);
         env.storage()
             .instance()
             .set(&DataKey::WindowStart, &rate_limit.window_start);
-        env.storage().instance().set(&DataKey::WindowUsed, &new_used);
+        env.storage()
+            .instance()
+            .set(&DataKey::WindowUsed, &new_used);
         env.storage()
             .instance()
             .set(&DataKey::NextTransferId, &(transfer_id + 1));
@@ -196,7 +205,9 @@ impl BridgeSecurityContract {
         }
 
         transfer.status = TransferStatus::Challenged;
-        env.storage().persistent().set(&DataKey::Transfer(transfer_id), &transfer);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Transfer(transfer_id), &transfer);
         env.events()
             .publish((BRIDGE_NS, ACTION_CHALLENGE, challenger), transfer_id);
 
@@ -222,7 +233,9 @@ impl BridgeSecurityContract {
         }
 
         transfer.status = TransferStatus::Fraudulent;
-        env.storage().persistent().set(&DataKey::Transfer(transfer_id), &transfer);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Transfer(transfer_id), &transfer);
         env.storage()
             .persistent()
             .set(&DataKey::FraudProof(transfer_id), &proof_hash);
@@ -263,7 +276,9 @@ impl BridgeSecurityContract {
         }
 
         transfer.status = TransferStatus::Finalized;
-        env.storage().persistent().set(&DataKey::Transfer(transfer_id), &transfer);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Transfer(transfer_id), &transfer);
         env.events()
             .publish((BRIDGE_NS, ACTION_FINALIZE, operator), transfer_id);
 
@@ -279,7 +294,10 @@ impl BridgeSecurityContract {
     }
 
     pub fn is_paused(env: Env) -> bool {
-        env.storage().instance().get(&DataKey::Paused).unwrap_or(false)
+        env.storage()
+            .instance()
+            .get(&DataKey::Paused)
+            .unwrap_or(false)
     }
 
     pub fn get_transfer(env: Env, transfer_id: u64) -> Result<BridgeTransfer, BridgeError> {
@@ -289,7 +307,10 @@ impl BridgeSecurityContract {
 
     pub fn get_fraud_proof(env: Env, transfer_id: u64) -> Result<Option<Bytes>, BridgeError> {
         ensure_initialized(&env)?;
-        Ok(env.storage().persistent().get(&DataKey::FraudProof(transfer_id)))
+        Ok(env
+            .storage()
+            .persistent()
+            .get(&DataKey::FraudProof(transfer_id)))
     }
 
     pub fn get_rate_limit_state(env: Env) -> Result<RateLimitState, BridgeError> {
@@ -330,7 +351,12 @@ fn ensure_initialized(env: &Env) -> Result<(), BridgeError> {
 }
 
 fn require_not_paused(env: &Env) -> Result<(), BridgeError> {
-    if env.storage().instance().get(&DataKey::Paused).unwrap_or(false) {
+    if env
+        .storage()
+        .instance()
+        .get(&DataKey::Paused)
+        .unwrap_or(false)
+    {
         Err(BridgeError::ContractPaused)
     } else {
         Ok(())
@@ -367,7 +393,10 @@ fn read_challenge_period(env: &Env) -> Result<u64, BridgeError> {
 }
 
 fn read_next_transfer_id(env: &Env) -> u64 {
-    env.storage().instance().get(&DataKey::NextTransferId).unwrap_or(1)
+    env.storage()
+        .instance()
+        .get(&DataKey::NextTransferId)
+        .unwrap_or(1)
 }
 
 fn read_rate_limit_state(env: &Env) -> Result<RateLimitState, BridgeError> {
@@ -382,8 +411,16 @@ fn read_rate_limit_state(env: &Env) -> Result<RateLimitState, BridgeError> {
             .instance()
             .get(&DataKey::RateLimitWindow)
             .ok_or(BridgeError::NotInitialized)?,
-        window_start: env.storage().instance().get(&DataKey::WindowStart).unwrap_or(0),
-        used_in_window: env.storage().instance().get(&DataKey::WindowUsed).unwrap_or(0),
+        window_start: env
+            .storage()
+            .instance()
+            .get(&DataKey::WindowStart)
+            .unwrap_or(0),
+        used_in_window: env
+            .storage()
+            .instance()
+            .get(&DataKey::WindowUsed)
+            .unwrap_or(0),
     })
 }
 
@@ -391,7 +428,9 @@ fn map_non_pending_status(status: TransferStatus) -> BridgeError {
     match status {
         TransferStatus::Pending => BridgeError::InvalidTransferState,
         TransferStatus::Challenged => BridgeError::TransferChallenged,
-        TransferStatus::Finalized | TransferStatus::Fraudulent => BridgeError::TransferAlreadyResolved,
+        TransferStatus::Finalized | TransferStatus::Fraudulent => {
+            BridgeError::TransferAlreadyResolved
+        }
     }
 }
 

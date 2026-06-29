@@ -36,9 +36,7 @@ fn setup() -> Fixture {
     let challenger = Address::generate(&env);
     let recipient = Address::generate(&env);
 
-    client
-        .initialize(&admin, &RATE_LIMIT, &RATE_WINDOW, &CHALLENGE_PERIOD)
-        .unwrap();
+    client.initialize(&admin, &RATE_LIMIT, &RATE_WINDOW, &CHALLENGE_PERIOD);
 
     Fixture {
         env,
@@ -52,25 +50,23 @@ fn setup() -> Fixture {
 }
 
 fn submit_default_transfer(f: &Fixture, amount: i128) -> u64 {
-    f.client
-        .submit_transfer(
-            &f.operator,
-            &f.recipient,
-            &amount,
-            &1u32,
-            &proof(&f.env, b"bridge-proof"),
-        )
-        .unwrap()
+    f.client.submit_transfer(
+        &f.operator,
+        &f.recipient,
+        &amount,
+        &1u32,
+        &proof(&f.env, b"bridge-proof"),
+    )
 }
 
 #[test]
 fn initialize_sets_config() {
     let f = setup();
-    let rate_limit = f.client.get_rate_limit_state().unwrap();
+    let rate_limit = f.client.get_rate_limit_state();
 
     assert_eq!(rate_limit.amount_limit, RATE_LIMIT);
     assert_eq!(rate_limit.window_seconds, RATE_WINDOW);
-    assert_eq!(f.client.get_challenge_period().unwrap(), CHALLENGE_PERIOD);
+    assert_eq!(f.client.get_challenge_period(), CHALLENGE_PERIOD);
     assert!(!f.client.is_paused());
 }
 
@@ -78,7 +74,7 @@ fn initialize_sets_config() {
 fn submit_transfer_records_pending_transfer() {
     let f = setup();
     let transfer_id = submit_default_transfer(&f, 400);
-    let transfer = f.client.get_transfer(&transfer_id).unwrap();
+    let transfer = f.client.get_transfer(&transfer_id);
 
     assert_eq!(transfer.operator, f.operator);
     assert_eq!(transfer.recipient, f.recipient);
@@ -91,7 +87,7 @@ fn submit_transfer_updates_rate_limit_usage() {
     let f = setup();
     submit_default_transfer(&f, 400);
 
-    let state = f.client.get_rate_limit_state().unwrap();
+    let state = f.client.get_rate_limit_state();
     assert_eq!(state.used_in_window, 400);
 }
 
@@ -117,11 +113,13 @@ fn rate_limit_resets_after_window_rollover() {
     let f = setup();
     submit_default_transfer(&f, 900);
 
-    f.env.ledger().with_mut(|ledger| ledger.timestamp += RATE_WINDOW + 1);
+    f.env
+        .ledger()
+        .with_mut(|ledger| ledger.timestamp += RATE_WINDOW + 1);
 
     let transfer_id = submit_default_transfer(&f, 800);
-    let transfer = f.client.get_transfer(&transfer_id).unwrap();
-    let state = f.client.get_rate_limit_state().unwrap();
+    let transfer = f.client.get_transfer(&transfer_id);
+    let state = f.client.get_rate_limit_state();
 
     assert_eq!(transfer.amount, 800);
     assert_eq!(state.used_in_window, 800);
@@ -130,7 +128,7 @@ fn rate_limit_resets_after_window_rollover() {
 #[test]
 fn pause_blocks_new_submissions() {
     let f = setup();
-    f.client.pause(&f.admin).unwrap();
+    f.client.pause(&f.admin);
 
     assert_eq!(
         f.client.try_submit_transfer(
@@ -147,11 +145,11 @@ fn pause_blocks_new_submissions() {
 #[test]
 fn unpause_restores_submissions() {
     let f = setup();
-    f.client.pause(&f.admin).unwrap();
-    f.client.unpause(&f.admin).unwrap();
+    f.client.pause(&f.admin);
+    f.client.unpause(&f.admin);
 
     let transfer_id = submit_default_transfer(&f, 100);
-    assert_eq!(f.client.get_transfer(&transfer_id).unwrap().amount, 100);
+    assert_eq!(f.client.get_transfer(&transfer_id).amount, 100);
 }
 
 #[test]
@@ -174,9 +172,9 @@ fn finalize_succeeds_after_challenge_period() {
         .ledger()
         .with_mut(|ledger| ledger.timestamp += CHALLENGE_PERIOD);
 
-    f.client.finalize_transfer(&f.operator, &transfer_id).unwrap();
+    f.client.finalize_transfer(&f.operator, &transfer_id);
     assert_eq!(
-        f.client.get_transfer(&transfer_id).unwrap().status,
+        f.client.get_transfer(&transfer_id).status,
         TransferStatus::Finalized
     );
 }
@@ -185,9 +183,7 @@ fn finalize_succeeds_after_challenge_period() {
 fn challenge_within_period_blocks_finalization() {
     let f = setup();
     let transfer_id = submit_default_transfer(&f, 200);
-    f.client
-        .challenge_transfer(&f.challenger, &transfer_id)
-        .unwrap();
+    f.client.challenge_transfer(&f.challenger, &transfer_id);
 
     f.env
         .ledger()
@@ -220,15 +216,14 @@ fn fraud_proof_marks_transfer_as_fraudulent() {
     let transfer_id = submit_default_transfer(&f, 300);
 
     f.client
-        .submit_fraud_proof(&f.reviewer, &transfer_id, &proof(&f.env, b"fraud-proof"))
-        .unwrap();
+        .submit_fraud_proof(&f.reviewer, &transfer_id, &proof(&f.env, b"fraud-proof"));
 
     assert_eq!(
-        f.client.get_transfer(&transfer_id).unwrap().status,
+        f.client.get_transfer(&transfer_id).status,
         TransferStatus::Fraudulent
     );
     assert_eq!(
-        f.client.get_fraud_proof(&transfer_id).unwrap(),
+        f.client.get_fraud_proof(&transfer_id),
         Some(proof(&f.env, b"fraud-proof"))
     );
 }
@@ -241,14 +236,15 @@ fn finalized_transfer_cannot_be_resolved_again() {
     f.env
         .ledger()
         .with_mut(|ledger| ledger.timestamp += CHALLENGE_PERIOD);
-    f.client.finalize_transfer(&f.operator, &transfer_id).unwrap();
+    f.client.finalize_transfer(&f.operator, &transfer_id);
 
     assert_eq!(
         f.client.try_finalize_transfer(&f.operator, &transfer_id),
         Err(Ok(BridgeError::TransferAlreadyResolved))
     );
     assert_eq!(
-        f.client.try_submit_fraud_proof(&f.reviewer, &transfer_id, &proof(&f.env, b"late-proof")),
+        f.client
+            .try_submit_fraud_proof(&f.reviewer, &transfer_id, &proof(&f.env, b"late-proof")),
         Err(Ok(BridgeError::TransferAlreadyResolved))
     );
 }
@@ -264,7 +260,8 @@ fn finalize_rejects_wrong_operator() {
         .with_mut(|ledger| ledger.timestamp += CHALLENGE_PERIOD);
 
     assert_eq!(
-        f.client.try_finalize_transfer(&other_operator, &transfer_id),
+        f.client
+            .try_finalize_transfer(&other_operator, &transfer_id),
         Err(Ok(BridgeError::Unauthorized))
     );
 }
@@ -294,9 +291,7 @@ fn submit_transfer_requires_auth() {
     let recipient = Address::generate(&env);
 
     env.mock_all_auths();
-    client
-        .initialize(&admin, &RATE_LIMIT, &RATE_WINDOW, &CHALLENGE_PERIOD)
-        .unwrap();
+    client.initialize(&admin, &RATE_LIMIT, &RATE_WINDOW, &CHALLENGE_PERIOD);
     env.set_auths(&[]);
 
     client.submit_transfer(&operator, &recipient, &100, &1u32, &proof(&env, b"proof"));
