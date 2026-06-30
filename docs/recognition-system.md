@@ -1,171 +1,190 @@
 # Contributor Recognition System
 
-This document defines how the Soroban Cookbook recognises and rewards
-contributors.  All criteria, tier levels, and rewards described here apply to
-the open-source repository at
-[Soroban-Cookbook/Soroban-Cookbook-](https://github.com/Soroban-Cookbook/Soroban-Cookbook-).
+The Soroban Cookbook recognition system acknowledges and rewards the contributors who make this project valuable for the entire Stellar developer community.
 
 ---
 
 ## Table of Contents
 
-1. [Recognition Criteria](#recognition-criteria)
-2. [Contribution Tiers](#contribution-tiers)
-3. [Rewards](#rewards)
-4. [Automation Plan](#automation-plan)
-5. [Nomination and Review Process](#nomination-and-review-process)
+1. [Recognition Criteria](#1-recognition-criteria)
+2. [Contributor Tiers](#2-contributor-tiers)
+3. [Rewards](#3-rewards)
+4. [Automation Plan](#4-automation-plan)
+5. [How to Get Recognized](#5-how-to-get-recognized)
 
 ---
 
-## Recognition Criteria
+## 1. Recognition Criteria
 
-A contribution is eligible for recognition when it meets **all** of the
-following quality gates:
+Contributions are evaluated across four dimensions:
 
-| Gate | Requirement |
-|------|-------------|
-| Tests pass | CI green on the PR (build, clippy, tests) |
-| Follows style guide | `cargo fmt` clean; follows [`docs/style-guide.md`](./style-guide.md) |
-| Acceptance criteria met | Issue's acceptance criteria are all checked |
-| Reviewed and merged | PR reviewed by at least one maintainer and merged to `main` |
+### Quality
+- Code passes all CI checks (format, lint, tests, WASM build)
+- Examples follow the [style guide](./style-guide.md) and include comprehensive tests
+- Documentation is clear, accurate, and complete
+- Security considerations are addressed in both code and docs
 
-### Contribution types counted
+### Impact
+- Number of developers helped (measured via issue references, discussion engagement)
+- Examples added in high-demand areas (DeFi, Tokens, Governance, Security)
+- Bug fixes that prevent data loss or security vulnerabilities
+- Documentation that bridges knowledge gaps for newcomers
 
-- **Code**: new example contracts, bug fixes, refactors
-- **Documentation**: new guides, corrections, translations
-- **Testing**: additional unit tests, integration tests, coverage improvements
-- **Community**: issue triage, PR reviews, answering questions in Discussions
+### Consistency
+- Number of accepted PRs across a rolling 90-day window
+- Sustained engagement over multiple phases of the project
+- Constructive code review comments on other contributors' PRs
+
+### Community Engagement
+- Helping others in GitHub Discussions and Issues
+- Writing tutorials, blog posts, or videos that reference the cookbook
+- Reporting well-documented bugs with reproduction steps
+- Mentoring new contributors through their first PR
 
 ---
 
-## Contribution Tiers
+## 2. Contributor Tiers
 
-Tiers accumulate permanently — reaching a higher tier does not remove lower-
-tier benefits.
+### Tier 1 — Newcomer
 
-### Tier 1 — Contributor
+**Criteria:** First accepted PR to the repository.
 
-**Threshold:** 1 merged PR of any size.
+**Badge:** `newcomer` label added to your GitHub profile in the contributors list.
 
 **Recognition:**
-- Name listed in the **Contributors** section of [`README.md`](../README.md)
-- `contributor` label applied to your GitHub profile in the repo's member list
+- Named in the monthly contributors post
+- `good first issue` label on issues suited to your skill level
 
 ---
 
-### Tier 2 — Cookbook Author
+### Tier 2 — Contributor
 
-**Threshold:** 3 or more merged PRs **or** 1 substantial contribution
-(a complete, tested example crate with README).
+**Criteria:** 3 or more accepted PRs, or 1 high-impact contribution (new full example with tests, significant documentation section, or critical bug fix).
+
+**Badge:** `contributor` label.
 
 **Recognition:**
-- Name listed under **Authors** in [`README.md`](../README.md)
-- Mention in the quarterly project update (GitHub Discussion)
-- `author` label on GitHub
+- Listed in `CONTRIBUTORS.md` with contribution summary
+- Mentioned in release notes when your work ships
+- Access to the `#contributors` channel in the community Discord
 
 ---
 
-### Tier 3 — Core Contributor
+### Tier 3 — Regular Contributor
 
-**Threshold:** 10 or more merged PRs **or** sustained engagement over at least
-2 consecutive months (code + review + community).
+**Criteria:** 10 or more accepted PRs, or sustained contributions across at least 2 project phases, or a combination of code + review + community engagement.
+
+**Badge:** `regular-contributor` label.
 
 **Recognition:**
-- Listed as a **Core Contributor** in [`README.md`](../README.md) with a brief
-  bio/link
-- Invited to the private `#cookbook-core` channel (if a community chat exists)
-- May be nominated for maintainer rights
+- Featured in the project README contributors section
+- Invited to participate in roadmap discussions
+- Early access to new feature branches for feedback
+- Priority review queue — your PRs are reviewed within 48 hours
 
 ---
 
-### Tier 4 — Maintainer
+### Tier 4 — Core Contributor
 
-**Threshold:** Nominated by an existing maintainer and approved by consensus.
-Typically reached after Tier 3 with demonstrated commitment to project
-direction and code quality.
+**Criteria:** Sustained, high-quality contributions across 3+ phases, demonstrated deep expertise in Soroban, and active mentorship of newer contributors.
+
+**Badge:** `core-contributor` label.
 
 **Recognition:**
-- Listed as **Maintainer** in [`README.md`](../README.md)
-- Write access to the repository
-- Participates in roadmap decisions
+- Named in the book's acknowledgments page
+- Write access to non-protected branches for faster iteration
+- Co-authorship credit in official cookbook announcements
+- Invited to the private core-team sync calls
 
 ---
 
-## Rewards
+### Special Recognition
 
-> Soroban Cookbook is an open-source community project.  Rewards are
-> non-monetary and community-driven unless explicitly noted otherwise.
+The following one-time awards can be granted at any tier:
 
-| Tier | Rewards |
+| Award | Criteria |
+|-------|----------|
+| **Security Hero** | Responsibly discloses a security vulnerability or fixes a critical bug |
+| **Docs Champion** | Adds or rewrites documentation that measurably improves onboarding |
+| **Test Coverage Champion** | Raises workspace test coverage by 10+ percentage points |
+| **Community MVP** | Answers 20+ GitHub issues or discussions in a quarter |
+| **Phase Completer** | Closes all open issues in a single project phase |
+
+---
+
+## 3. Rewards
+
+### Immediate (all tiers)
+
+- Public acknowledgment in the PR merge comment
+- GitHub profile link in the contributors list
+- `Stellar Wave` issue label on qualifying contributions
+
+### Monthly
+
+- A **Contributors Digest** is posted to the project's GitHub Discussions listing everyone who merged a PR that month, with links to their contributions
+- Top contributor of the month is featured with a short bio
+
+### Quarterly
+
+- **Stellar Swag Pack** (stickers, t-shirt) shipped to Regular and Core Contributors who were active that quarter
+- Project maintainers nominate outstanding contributors to the Stellar Development Foundation community spotlight
+
+### Annual
+
+- **Soroban Cookbook Award** — awarded to at most 3 contributors per year for exceptional impact. Recipients are listed permanently in the book's Hall of Fame section.
+
+---
+
+## 4. Automation Plan
+
+The recognition system is partially automated to reduce maintainer overhead.
+
+### GitHub Actions Workflow
+
+A weekly workflow (`/.github/workflows/recognition.yml`) will:
+
+1. **Aggregate contributions** — query the GitHub API for merged PRs, closed issues, and review comments in the past 7 days
+2. **Update `CONTRIBUTORS.md`** — add new contributors, increment contribution counts, and promote tiers automatically
+3. **Post digest** — open a GitHub Discussion post summarizing the week's contributors
+4. **Apply labels** — add the appropriate tier badge label to contributor profiles via the GitHub API
+
+### Tier Promotion Rules (automated)
+
+| Transition | Trigger |
+|------------|---------|
+| Newcomer → Contributor | 3rd PR merged, or maintainer manual override |
+| Contributor → Regular | 10th PR merged, or maintainer manual override |
+| Regular → Core | Maintainer manual decision only |
+| Any → Special Award | Maintainer manual decision only |
+
+### Manual Override
+
+Maintainers can always override automatic tier assignments by adding a comment `/recognize @username tier-3` to any issue or PR. The workflow reads these commands and updates `CONTRIBUTORS.md` accordingly.
+
+### Tools Required
+
+| Tool | Purpose |
 |------|---------|
-| 1 — Contributor | Credit in README; `contributor` GitHub label |
-| 2 — Cookbook Author | Credit in README (Authors section); quarterly shout-out |
-| 3 — Core Contributor | Prominent README credit with bio; invited to core channel; roadmap input |
-| 4 — Maintainer | Repo write access; release authority; featured on project homepage if applicable |
-
-### Special recognitions
-
-- **First-time contributor badge**: Automatically added (via bot comment) on a
-  contributor's first merged PR.
-- **Milestone badge**: Awarded for contributions that close a tracked phase
-  milestone (e.g., completing all Phase 5 examples).
-- **Bug hunter**: Awarded for finding and fixing a security or correctness bug.
+| `gh` CLI | Querying merged PRs, posting discussions |
+| GitHub Actions | Scheduled automation |
+| `CONTRIBUTORS.md` | Source of truth for tier assignments |
+| GitHub Labels API | Applying tier badge labels |
 
 ---
 
-## Automation Plan
+## 5. How to Get Recognized
 
-The following automations are planned to reduce manual overhead:
-
-### Phase 1 — Immediate (manual process)
-
-- Maintainers manually update the `Contributors` / `Authors` / `Core
-  Contributors` tables in `README.md` at the end of each month.
-- First-merged-PR welcome comment posted manually or via a GitHub Action
-  trigger on `pull_request` events with `merged: true`.
-
-### Phase 2 — GitHub Actions
-
-A lightweight GitHub Action (`recognition-bot`) will:
-
-1. **Trigger:** `pull_request` event with `action: closed` and `merged: true`.
-2. **Count** the contributor's total merged PRs by querying the GitHub API.
-3. **Determine** the appropriate tier using the thresholds above.
-4. **Post** a comment on the PR congratulating the contributor and stating
-   their current tier.
-5. **Open** a follow-up issue or PR to update `README.md` if a tier threshold
-   was crossed.
-
-> Implementation note: the action should use `GITHUB_TOKEN` and avoid
-> third-party secrets.  Tier state can be stored in a `docs/contributors.json`
-> file committed to the repo.
-
-### Phase 3 — Enhanced tracking
-
-- Leaderboard page generated automatically from `docs/contributors.json` and
-  published to the mdBook site.
-- Monthly digest GitHub Discussion created automatically listing all new
-  contributors and tier promotions.
+1. **Start contributing** — pick a `good first issue` from the issue tracker and open a PR following the [contribution guide](../CONTRIBUTING.md)
+2. **Ensure quality** — all CI checks must pass before merge
+3. **Stay engaged** — comment on other PRs, help answer questions in issues
+4. **Track your status** — check `CONTRIBUTORS.md` to see your current tier and contribution count
+5. **Reach out** — if you believe you qualify for a higher tier or special award that hasn't been applied, open an issue tagged `recognition` and link your contributions
 
 ---
 
-## Nomination and Review Process
+## Related Documents
 
-1. **Self-nomination**: A contributor may open a GitHub Discussion titled
-   "Recognition: [GitHub username]" listing their contributions and the tier
-   they believe they qualify for.
-2. **Maintainer nomination**: Any maintainer may open the same type of
-   Discussion on behalf of a contributor.
-3. **Review window**: 7 days for the community to comment.
-4. **Decision**: A maintainer merges a PR updating `README.md` and
-   `docs/contributors.json` to record the promotion.
-
----
-
-## Current Contributors
-
-> This section is updated manually by maintainers.  Automated updates are
-> planned for Phase 2.
-
-See the [Contributors section of README.md](../README.md#contributors) for the
-current list.
+- [Contributing Guide](../CONTRIBUTING.md) — how to set up the environment and submit a PR
+- [Code of Conduct](../CODE_OF_CONDUCT.md) — community standards that apply to all contributors
+- [Style Guide](./style-guide.md) — code and documentation standards
