@@ -21,6 +21,7 @@ The pass rate below is the success share among the latest 20 completed `test.yml
 | Week | Tests passed | Security audit | Benchmarks |
 |---|---:|---|---|
 <!-- QUALITY-SNAPSHOT-START -->
+| 2026-10-26 | 0.0% (0/3) | failure | failure |
 | 2026-10-19 | 0.0% (0/20) | action_required | action_required |
 <!-- QUALITY-SNAPSHOT-END -->
 
